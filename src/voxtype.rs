@@ -26,10 +26,6 @@ pub enum State {
 impl State {
     /// Whether the overlay should be on screen.
     #[must_use]
-    #[expect(
-        dead_code,
-        reason = "contract for the overlay surface (sprint orbe, lot 1)"
-    )]
     pub fn is_active(self) -> bool {
         matches!(self, Self::Recording | Self::Transcribing)
     }

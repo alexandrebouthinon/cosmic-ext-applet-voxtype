@@ -23,16 +23,13 @@ pub enum OverlaySize {
 
 impl OverlaySize {
     /// Side of the square overlay surface, in logical pixels.
+    /// Roughly 60 % of it is padding the orb swells into while you speak.
     #[must_use]
-    #[expect(
-        dead_code,
-        reason = "contract for the overlay surface (sprint orbe, lot 1)"
-    )]
     pub fn px(self) -> u32 {
         match self {
-            Self::Small => 72,
-            Self::Medium => 96,
-            Self::Large => 128,
+            Self::Small => 180,
+            Self::Medium => 240,
+            Self::Large => 300,
         }
     }
 }

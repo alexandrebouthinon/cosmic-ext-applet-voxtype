@@ -56,6 +56,8 @@ verify:
 # Installs into ~/.local so the panel can load the applet without root
 install-user: build-release
     just prefix={{ env('HOME') / '.local' }} install
+    # cosmic-panel's PATH lacks ~/.local/bin: point Exec at the binary itself.
+    sed -i 's|^Exec=[^ ]*|Exec={{ env('HOME') / '.local' / 'bin' / name }}|' {{ env('HOME') / '.local' / 'share' / 'applications' / appid + '.desktop' }}
 
 # Run the application for testing purposes
 run *args:

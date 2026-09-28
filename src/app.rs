@@ -24,6 +24,8 @@ pub struct AppModel {
     info: voxtype::Info,
     /// Hides the applet when the `voxtype` binary is not installed.
     binary_missing: bool,
+    /// The `--overlay` child process, running while the overlay is enabled.
+    overlay: Option<OverlayChild>,
 }
 
 /// Messages emitted by the application and its widgets.
@@ -64,7 +66,7 @@ impl cosmic::Application for AppModel {
         _flags: Self::Flags,
     ) -> (Self, Task<cosmic::Action<Self::Message>>) {
         // Construct the app model with the runtime's core.
-        let app = AppModel {
+        let mut app = AppModel {
             core,
             config: cosmic_config::Config::new(Self::APP_ID, Config::VERSION)
                 .map(|context| match Config::get_entry(&context) {
@@ -80,6 +82,7 @@ impl cosmic::Application for AppModel {
                 .unwrap_or_default(),
             ..Default::default()
         };
+        app.sync_overlay();
 
         (app, Task::none())
     }
@@ -153,6 +156,7 @@ impl cosmic::Application for AppModel {
             Message::Voxtype(voxtype::Event::BinaryMissing) => self.binary_missing = true,
             Message::UpdateConfig(config) => {
                 self.config = config;
+                self.sync_overlay();
             }
             Message::ToggleOverlay(enabled) => {
                 if let Ok(ctx) = cosmic_config::Config::new(Self::APP_ID, Config::VERSION) {
@@ -191,5 +195,36 @@ impl cosmic::Application for AppModel {
 
     fn style(&self) -> Option<cosmic::iced::theme::Style> {
         Some(cosmic::applet::style())
+    }
+}
+
+impl AppModel {
+    /// Runs the overlay child exactly while it is enabled, respawning it if it died.
+    fn sync_overlay(&mut self) {
+        if !self.config.show_overlay {
+            self.overlay = None;
+            return;
+        }
+        let running = self
+            .overlay
+            .as_mut()
+            .is_some_and(|OverlayChild(child)| matches!(child.try_wait(), Ok(None)));
+        if !running {
+            self.overlay = std::env::current_exe()
+                .and_then(|exe| std::process::Command::new(exe).arg("--overlay").spawn())
+                .ok()
+                .map(OverlayChild);
+        }
+    }
+}
+
+/// Kills the overlay process when dropped, so it never outlives the applet's intent.
+struct OverlayChild(std::process::Child);
+
+impl Drop for OverlayChild {
+    fn drop(&mut self) {
+        _ = self.0.kill();
+        // Reap it so no zombie is left behind.
+        _ = self.0.wait();
     }
 }
