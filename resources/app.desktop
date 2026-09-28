@@ -1,0 +1,14 @@
+[Desktop Entry]
+Name=Cosmic Ext Applet Voxtype
+Comment=Voxtype recording indicator for the COSMIC panel
+Type=Application
+Icon=io.github.alexandrebouthinon.CosmicExtAppletVoxtype
+Exec=cosmic-ext-applet-voxtype %F
+Terminal=false
+StartupNotify=true
+Categories=COSMIC
+Keywords=COSMIC
+NoDisplay=true
+X-CosmicApplet=true
+X-CosmicHoverPopup=Auto
+MimeType=
