@@ -4,7 +4,7 @@ use crate::config::Config;
 use crate::fl;
 use cosmic::cosmic_config::{self, CosmicConfigEntry};
 use cosmic::iced::platform_specific::shell::wayland::commands::popup::{destroy_popup, get_popup};
-use cosmic::iced::{futures, window::Id, Limits, Subscription};
+use cosmic::iced::{Limits, Subscription, futures, window::Id};
 use cosmic::prelude::*;
 use cosmic::widget;
 use futures::SinkExt;
@@ -122,11 +122,14 @@ impl cosmic::Application for AppModel {
         Subscription::batch(vec![
             // Create a subscription which emits updates through a channel.
             Subscription::run(|| {
-                cosmic::iced::stream::channel(4, move |mut channel: futures::channel::mpsc::Sender<_>| async move {
-                    _ = channel.send(Message::SubscriptionChannel).await;
+                cosmic::iced::stream::channel(
+                    4,
+                    move |mut channel: futures::channel::mpsc::Sender<_>| async move {
+                        _ = channel.send(Message::SubscriptionChannel).await;
 
-                    futures::future::pending().await
-                })
+                        futures::future::pending().await
+                    },
+                )
             }),
             // Watch for application configuration changes.
             self.core()
@@ -174,7 +177,7 @@ impl cosmic::Application for AppModel {
                         .min_height(200.0)
                         .max_height(1080.0);
                     get_popup(popup_settings)
-                }
+                };
             }
             Message::PopupClosed(id) => {
                 if self.popup.as_ref() == Some(&id) {

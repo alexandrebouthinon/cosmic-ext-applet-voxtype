@@ -46,6 +46,17 @@ check *args:
 # Runs a clippy check with JSON message format
 check-json: (check '--message-format=json')
 
+# Format, autofix lints, then fail on remaining warnings and run tests
+verify:
+    cargo fmt
+    cargo clippy --fix --allow-dirty --allow-staged --all-features -- -W clippy::pedantic
+    cargo clippy --all-features -- -W clippy::pedantic -D warnings
+    cargo test
+
+# Installs into ~/.local so the panel can load the applet without root
+install-user: build-release
+    just prefix={{ env('HOME') / '.local' }} install
+
 # Run the application for testing purposes
 run *args:
     env RUST_BACKTRACE=full cargo run --release {{args}}
