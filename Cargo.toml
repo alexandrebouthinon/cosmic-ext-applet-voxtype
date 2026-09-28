@@ -37,6 +37,8 @@ features = [
     "wayland",
     # Windowing support for X11, Windows, Mac, & Redox
     "winit",
+    # GPU rendering keeps the overlay's per-frame CPU cost low
+    "wgpu",
 ]
 
 # Uncomment to test a locally-cloned libcosmic

@@ -32,14 +32,15 @@ L'utilisateur dicte avec Voxtype via un raccourci COSMIC et n'a aucun retour vis
 - [ ] Le processus overlay consomme moins de 5 % d'un cœur CPU pendant l'animation, et 0 % au repos (surface masquée, aucune boucle de rendu).
 
 ## Choix techniques
-- Architecture : spike « l'applet peut-il ouvrir sa propre surface layer-shell ? » ; sinon, un 2e binaire lancé par l'applet (tranché par l'utilisateur).
+- Architecture : processus enfant, le même binaire en mode `--overlay`, lancé et tué par l'applet (tranché après le spike). Le `.desktop` porte `X-HostWaylandDisplay=true` pour que cosmic-panel transmette le vrai `WAYLAND_DISPLAY`.
+- Rendu : feature `wgpu` de libcosmic ; particules en `fill_rectangle` (les `Path::circle` coûtent 14 % CPU contre 4 % pour 600 grains à 60 fps), cercles réservés aux rares gros grains.
 - Rendu : `canvas` iced ; un shader wgpu seulement si le canvas rame (tranché).
 - Couleurs dérivées du thème COSMIC : accent → étincelles et transcription ; violets et cyan de la palette → corps (tranché).
 - Niveau audio : `$XDG_RUNTIME_DIR/voxtype/audio.sock`, trames de 16 octets à 100 Hz (seq u32, min f32, max f32, peak_dbfs f32).
 - Écran : l'écran principal (tranché).
 
 ## Hypothèses
-- Le compositeur choisit l'« écran principal » quand la surface layer-shell ne précise pas d'output : c'est le cas dans cosmic-osd (à valider au spike).
+- `IcedOutput::Active` place la surface sur l'écran actif ; sur un seul écran, c'est l'écran principal (multi-écran au backlog).
 - Mapping des couleurs sur la palette du thème : 35 % violet (`accent_purple`), 25 % violet clair, 25 % cyan (`accent_blue`), 15 % accent (réglage fin possible plus tard).
 
 ## Tâches
