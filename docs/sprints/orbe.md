@@ -25,5 +25,11 @@ Livrable testable : applet dans le panneau, icône à jour, orbe 10b qui appara�
 - Codex en sandbox `workspace-write` ne peut pas lancer `cargo clippy --fix` (vérifié).
 
 ## Bilan (fin de sprint)
-- Points prévus / livrés : …
-- Rétro : …
+- Points prévus / livrés : 20 / 20
+- Marché : spike du lot 0 qui a révélé tôt le proxy de cosmic-panel ; mesures réelles (CPU /proc, screenshots) ; overlay à 0 % CPU au repos.
+- Raté → règle :
+  - Règle LSP répétée par l'utilisateur → discover active les LSP de la stack dans les réglages du projet et propose d'installer les serveurs manquants (skill discover)
+  - Applet masquée sans voxtype, corrigé en démo → un cas d'erreur reste visible et distinguable d'une panne de l'outil (skill cadrage)
+  - Branche `feat/applet-icon` périmée trouvée en fin de sprint → ménage branches et worktrees en fin de lot (skill sprint)
+  - Codex ne peut pas lancer `clippy --fix` → verify relancé seulement si le rapport échoue, manque ou si le diff a changé (orchestrate, reviewer)
+- Capitalisé : tech/cosmic/cosmic-panel-applet-overlay, tech/cosmic/libcosmic-layer-surface-rendering, tech/voxtype/voxtype-integration, tech/linux/process-watchdog-pitfalls, tech/codex/codex-sandbox-limits
