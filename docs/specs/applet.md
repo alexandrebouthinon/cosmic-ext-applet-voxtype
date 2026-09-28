@@ -20,7 +20,7 @@ Voir l'état de Voxtype d'un coup d'œil, consulter ses infos et régler l'overl
 ## Critères d'acceptation
 - [ ] L'icône change d'état en moins de 200 ms après un changement Voxtype.
 - [ ] Arrêter `voxtype.service` donne l'icône barrée ; le relancer rétablit l'état normal sans action de l'utilisateur.
-- [ ] Sans binaire `voxtype` dans le PATH, l'applet n'affiche rien.
+- [ ] Sans binaire `voxtype` dans le PATH, l'applet affiche l'icône barrée.
 - [ ] Un changement de réglage d'overlay s'applique immédiatement et persiste après redémarrage de la session.
 
 ## Choix techniques
