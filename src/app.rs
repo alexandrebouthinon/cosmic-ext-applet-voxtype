@@ -22,7 +22,7 @@ pub struct AppModel {
     /// Last known Voxtype state; `Stopped` until the first status line arrives.
     state: voxtype::State,
     info: voxtype::Info,
-    /// Hides the applet when the `voxtype` binary is not installed.
+    /// The `voxtype` binary is not installed: shown like a stopped daemon.
     binary_missing: bool,
     /// The `--overlay` child process, running while the overlay is enabled.
     overlay: Option<OverlayChild>,
@@ -99,7 +99,12 @@ impl cosmic::Application for AppModel {
     fn view(&self) -> Element<'_, Self::Message> {
         self.core
             .applet
-            .icon_button("display-symbolic")
+            // Still shown without the binary, so the user can tell the applet itself runs.
+            .icon_button(icon_name(if self.binary_missing {
+                voxtype::State::Stopped
+            } else {
+                self.state
+            }))
             .on_press(Message::TogglePopup)
             .into()
     }
@@ -215,6 +220,15 @@ impl AppModel {
                 .ok()
                 .map(OverlayChild);
         }
+    }
+}
+
+fn icon_name(state: voxtype::State) -> &'static str {
+    match state {
+        voxtype::State::Idle => "audio-input-microphone-symbolic",
+        voxtype::State::Recording => "microphone-sensitivity-high-symbolic",
+        voxtype::State::Transcribing => "document-edit-symbolic",
+        voxtype::State::Stopped => "microphone-sensitivity-muted-symbolic",
     }
 }
 

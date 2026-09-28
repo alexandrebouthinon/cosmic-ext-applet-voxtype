@@ -12,7 +12,7 @@ Voir l'état de Voxtype d'un coup d'œil, consulter ses infos et régler l'overl
 
 ## Cas d'erreur et limites
 - Daemon arrêté : icône barrée, infos affichées « indisponible », reconnexion automatique (backoff).
-- Binaire `voxtype` absent : l'applet se masque (aucune icône).
+- Binaire `voxtype` absent : icône barrée, comme daemon arrêté (l'applet reste visible pour prouver qu'elle tourne).
 
 ## Hors-périmètre
 - Démarrer ou arrêter l'enregistrement au clic (backlog).
@@ -32,6 +32,6 @@ Voir l'état de Voxtype d'un coup d'œil, consulter ses infos et régler l'overl
 ## Tâches
 | Lot | Tâche | Points | Fichiers | Fichier de référence |
 |---|---|---|---|---|
-| 1 | Icône selon l'état (y compris barrée), masquage si binaire absent | 2 | src/app.rs, resources/ | cosmic-applets/cosmic-applet-audio |
+| 1 | Icône selon l'état (y compris barrée), icône barrée si binaire absent | 2 | src/app.rs, resources/ | cosmic-applets/cosmic-applet-audio |
 | 2 | Popup d'infos (modèle, device, backend) | 2 | src/app.rs | cosmic-applets/cosmic-applet-audio |
 | 2 | Réglages de l'overlay dans le popup | 2 | src/app.rs, src/config.rs | cosmic-applets |
