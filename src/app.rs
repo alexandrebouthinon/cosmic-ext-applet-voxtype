@@ -2,12 +2,12 @@
 
 use crate::config::Config;
 use crate::fl;
+use crate::voxtype;
 use cosmic::cosmic_config::{self, CosmicConfigEntry};
 use cosmic::iced::platform_specific::shell::wayland::commands::popup::{destroy_popup, get_popup};
-use cosmic::iced::{Limits, Subscription, futures, window::Id};
+use cosmic::iced::{Limits, Subscription, window::Id};
 use cosmic::prelude::*;
 use cosmic::widget;
-use futures::SinkExt;
 
 /// The application model stores app-specific state used to describe its interface and
 /// drive its logic.
@@ -19,8 +19,11 @@ pub struct AppModel {
     popup: Option<Id>,
     /// Configuration data that persists between application runs.
     config: Config,
-    /// Example row toggler.
-    example_row: bool,
+    /// Last known Voxtype state; `Stopped` until the first status line arrives.
+    state: voxtype::State,
+    info: voxtype::Info,
+    /// Hides the applet when the `voxtype` binary is not installed.
+    binary_missing: bool,
 }
 
 /// Messages emitted by the application and its widgets.
@@ -28,9 +31,9 @@ pub struct AppModel {
 pub enum Message {
     TogglePopup,
     PopupClosed(Id),
-    SubscriptionChannel,
+    Voxtype(voxtype::Event),
     UpdateConfig(Config),
-    ToggleExampleRow(bool),
+    ToggleOverlay(bool),
 }
 
 /// Create a COSMIC application from the app model
@@ -104,7 +107,7 @@ impl cosmic::Application for AppModel {
     fn view_window(&self, _id: Id) -> Element<'_, Self::Message> {
         let content_list = widget::list_column().add(widget::settings::item(
             fl!("example-row"),
-            widget::toggler(self.example_row).on_toggle(Message::ToggleExampleRow),
+            widget::toggler(self.config.show_overlay).on_toggle(Message::ToggleOverlay),
         ));
 
         self.core.applet.popup_container(content_list).into()
@@ -117,20 +120,8 @@ impl cosmic::Application for AppModel {
     /// activated by selectively appending to the subscription batch, and will
     /// continue to execute for the duration that they remain in the batch.
     fn subscription(&self) -> Subscription<Self::Message> {
-        struct MySubscription;
-
         Subscription::batch(vec![
-            // Create a subscription which emits updates through a channel.
-            Subscription::run(|| {
-                cosmic::iced::stream::channel(
-                    4,
-                    move |mut channel: futures::channel::mpsc::Sender<_>| async move {
-                        _ = channel.send(Message::SubscriptionChannel).await;
-
-                        futures::future::pending().await
-                    },
-                )
-            }),
+            voxtype::subscription().map(Message::Voxtype),
             // Watch for application configuration changes.
             self.core()
                 .watch_config::<Config>(Self::APP_ID)
@@ -151,13 +142,23 @@ impl cosmic::Application for AppModel {
     /// tasks are finished.
     fn update(&mut self, message: Self::Message) -> Task<cosmic::Action<Self::Message>> {
         match message {
-            Message::SubscriptionChannel => {
-                // For example purposes only.
+            Message::Voxtype(voxtype::Event::Status { state, info }) => {
+                self.binary_missing = false;
+                self.state = state;
+                // A stopped daemon reports no info; keep the last known values for the popup.
+                if state != voxtype::State::Stopped {
+                    self.info = info;
+                }
             }
+            Message::Voxtype(voxtype::Event::BinaryMissing) => self.binary_missing = true,
             Message::UpdateConfig(config) => {
                 self.config = config;
             }
-            Message::ToggleExampleRow(toggled) => self.example_row = toggled,
+            Message::ToggleOverlay(enabled) => {
+                if let Ok(ctx) = cosmic_config::Config::new(Self::APP_ID, Config::VERSION) {
+                    _ = self.config.set_show_overlay(&ctx, enabled);
+                }
+            }
             Message::TogglePopup => {
                 return if let Some(p) = self.popup.take() {
                     destroy_popup(p)
