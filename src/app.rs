@@ -114,7 +114,7 @@ impl cosmic::Application for AppModel {
     /// create a view for.
     fn view_window(&self, _id: Id) -> Element<'_, Self::Message> {
         let content_list = widget::list_column().add(widget::settings::item(
-            fl!("example-row"),
+            fl!("show-overlay"),
             widget::toggler(self.config.show_overlay).on_toggle(Message::ToggleOverlay),
         ));
 

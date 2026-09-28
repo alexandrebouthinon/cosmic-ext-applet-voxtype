@@ -1,9 +1,4 @@
-app-title = Cosmic Ext Applet Voxtype
+app-title = Voxtype Applet
 app-comment = Voxtype recording indicator for the COSMIC panel
-app-keywords =
-about = About
-view = View
-welcome = Welcome to COSMIC! ✨
-page-id = Page { $num }
-git-description = Git commit {$hash} on {$date}
-example-row = Example Row
+app-keywords = voxtype;dictation;speech;microphone;
+show-overlay = Show voice orb while dictating
