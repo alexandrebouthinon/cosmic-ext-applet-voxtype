@@ -29,5 +29,10 @@ Maquette : https://claude.ai/artifact/Twxfwdprz56zxNrgHM3Rqp (disposition B).
 | 4 | Orbe : l'indicateur de sélection masque les libellés S/M/L | ajustement | feat/applet | 1 | validé |
 
 ## Bilan (fin de sprint)
-- Points prévus / livrés : …
-- Rétro : …
+- Points prévus / livrés : 20 / 20 (+4 en recette)
+- Marché : recette structurée (4 retours tracés, 2 validés d'emblée) ; intégration dans `tmp/integ` avant la démo ; première pré-release 1.0.0-develop.1 via `just release`
+- Raté → règle :
+  - Micro spécifié sur les noms ALSA de Voxtype, illisibles, refait en démo → valider les listes système sur les données réelles de la machine (skill archi du projet)
+  - `target/` des worktrees a rempli `/tmp` (tmpfs), verify planté → worktrees dans `.worktrees/` du repo, sur disque (skills sprint et recette)
+  - Features passant clippy seules mais pas ensemble sur `AppModel` → état par onglet en struct et `update_<feature>` dès le brief (skill archi du projet)
+- Capitalisé : `tech/linux/pipewire-audio-sources`, `tech/cosmic/libcosmic-applet-widgets`, `tech/rust/cargo-worktrees-tmpfs`, `tech/release/semantic-release-cargo` (créées) ; `voxtype-integration`, `codex-sandbox-limits` (mises à jour)

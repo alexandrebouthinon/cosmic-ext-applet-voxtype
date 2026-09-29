@@ -39,3 +39,5 @@ Un seul binaire, deux processus : l'applet (lancée par cosmic-panel) et l'overl
 - `pkill -f` : ancrer le motif (`'^[^ ]*cosmic-ext-applet-voxtype --overlay$'`), sinon il tue son propre shell.
 - `just run` n'est pas le rendu du panneau ; l'overlay seul : `cargo run -- --overlay` (quitte si son parent meurt).
 - Voxtype : CLI uniquement, jamais modifié ni forké.
+- Listes système (micros, sorties…) : valider en cadrage sur les données réelles de la machine, face à ce qu'affiche COSMIC. Voxtype ne voit que les PCM ALSA ; les micros passent par PipeWire (`src/pipewire.rs`), Voxtype restant sur `default`.
+- `AppModel` : l'état de chaque onglet dans sa propre struct et un `update_<feature>` par feature, dès le brief. Sinon, chaque feature passe clippy seule mais plus une fois réunies (`struct_excessive_bools`, `too_many_lines`).
