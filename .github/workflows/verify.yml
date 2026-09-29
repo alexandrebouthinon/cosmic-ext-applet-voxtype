@@ -1,0 +1,38 @@
+name: Verify
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install system dependencies
+        # xkbcommon/wayland: only system libs this crate's dependency tree
+        # (per Cargo.lock: wayland-*, xkbcommon*) actually links against.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libxkbcommon-dev libwayland-dev
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - uses: Swatinem/rust-cache@v2
+
+      - run: just verify
+
+      # `just verify` runs `cargo fmt` and `clippy --fix`, which rewrite
+      # files in place: fail CI if that leaves an unformatted/un-fixed diff.
+      - name: Check for uncommitted changes from fmt/clippy --fix
+        run: git diff --exit-code

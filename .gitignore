@@ -5,6 +5,7 @@ debug/
 target/
 vendor/
 vendor.tar
+node_modules/
 debian/*
 !debian/changelog
 !debian/control

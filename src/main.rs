@@ -3,10 +3,26 @@
 mod app;
 mod config;
 mod i18n;
+mod install;
 mod overlay;
 mod voxtype;
 
 fn main() -> cosmic::iced::Result {
+    if let Some(command) = std::env::args()
+        .skip(1)
+        .find(|arg| matches!(arg.as_str(), "--install" | "--uninstall"))
+    {
+        let result = match command.as_str() {
+            "--install" => install::install(),
+            _ => install::uninstall(),
+        };
+        if let Err(error) = result {
+            eprintln!("{error}");
+            std::process::exit(1);
+        }
+        return Ok(());
+    }
+
     // Get the system's preferred languages.
     let requested_languages = i18n_embed::DesktopLanguageRequester::requested_languages();
 

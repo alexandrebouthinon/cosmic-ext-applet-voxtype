@@ -87,12 +87,21 @@ vendor-extract:
     rm -rf vendor
     tar pxf vendor.tar
 
-# Bump cargo version, create git commit, and create tag
-tag version:
-    find -type f -name Cargo.toml -exec sed -i '0,/^version/s/^version.*/version = "{{version}}"/' '{}' \; -exec git add '{}' \;
-    cargo check
-    cargo clean
-    git add Cargo.lock
-    git commit -m 'release: {{version}}'
-    git tag -a {{version}} -m ''
+# Publishes a release from `main` (stable, with binary) or `develop` (prerelease) via semantic-release
+release:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    branch="$(git rev-parse --abbrev-ref HEAD)"
+    if [[ "$branch" != "main" && "$branch" != "develop" ]]; then
+        echo "error: 'just release' only runs on 'main' or 'develop' (current: $branch)" >&2
+        exit 1
+    fi
+    if [[ -n "$(git status --porcelain)" ]]; then
+        echo "error: 'just release' requires a clean working tree" >&2
+        exit 1
+    fi
+    if [[ ! -d node_modules ]]; then
+        npm ci
+    fi
+    GITHUB_TOKEN="$(gh auth token)" npx semantic-release --no-ci
 
