@@ -36,6 +36,6 @@ Publier des versions propres de l'applet (tag, notes, binaire) sans travail manu
 ## Tâches
 | Lot | Tâche | Points | Fichiers | Fichier de référence |
 |---|---|---|---|---|
-| 1 | Branche develop, release.config.mjs, package.json, recette `just release`, CHANGELOG | 3 | release.config.mjs, package.json, justfile, CLAUDE.md | — |
-| 1 | `--install` / `--uninstall` (desktop + icône embarqués) | 3 | src/main.rs, src/install.rs | justfile (recette install-user) |
-| 1 | Workflow CI `just verify` | 1 | .github/workflows/verify.yml | — |
+| ✅ | Branche develop, release.config.mjs, package.json, recette `just release`, CHANGELOG | 3 | release.config.mjs, package.json, justfile, CLAUDE.md | — |
+| ✅ | `--install` / `--uninstall` (desktop + icône embarqués) | 3 | src/main.rs, src/install.rs | justfile (recette install-user) |
+| ✅ | Workflow CI `just verify` | 1 | .github/workflows/verify.yml | — |

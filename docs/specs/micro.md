@@ -36,4 +36,4 @@ Choisir depuis le panneau le micro que Voxtype utilisera pour les prochaines dic
 ## Tâches
 | Lot | Tâche | Points | Fichiers | Fichier de référence |
 |---|---|---|---|---|
-| 1 | Liste des devices, sélection, config set + restart, erreurs | 3 | src/voxtype.rs, src/app.rs | cosmic-applets/cosmic-applet-audio |
+| ✅ | Liste des devices, sélection, config set + restart, erreurs | 3 | src/voxtype.rs, src/app.rs | cosmic-applets/cosmic-applet-audio |

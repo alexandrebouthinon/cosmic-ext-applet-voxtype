@@ -35,4 +35,4 @@ Libérer le GPU (pour un jeu, par exemple) en arrêtant Voxtype depuis le pannea
 ## Tâches
 | Lot | Tâche | Points | Fichiers | Fichier de référence |
 |---|---|---|---|---|
-| 1 | Toggler du daemon, états inactive/failed/absent, erreurs | 3 | src/app.rs, src/voxtype.rs | cosmic-applets/cosmic-applet-audio |
+| ✅ | Toggler du daemon, états inactive/failed/absent, erreurs | 3 | src/app.rs, src/voxtype.rs | cosmic-applets/cosmic-applet-audio |

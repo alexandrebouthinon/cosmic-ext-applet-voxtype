@@ -39,6 +39,6 @@ Voir l'état de Voxtype d'un coup d'œil, consulter ses infos et régler l'overl
 | Lot | Tâche | Points | Fichiers | Fichier de référence |
 |---|---|---|---|---|
 | ✅ | Icône selon l'état (y compris barrée), icône barrée si binaire absent (sprint orbe) | 2 | src/app.rs, resources/ | cosmic-applets/cosmic-applet-audio |
-| 0 | Squelette du popup : en-tête, onglets, messages ; wrappers CLI (`status --extended`, `systemctl --user`, devices) dans src/voxtype.rs | 3 | src/app.rs, src/voxtype.rs | cosmic-applets/cosmic-applet-audio |
-| 1 | Onglet Statut (modèle, backend, « indisponible ») | 2 | src/app.rs | cosmic-applets/cosmic-applet-audio |
-| 1 | Onglet Orbe (toggle, dropdown position, segmented taille) | 2 | src/app.rs, src/config.rs | cosmic-applets |
+| ✅ | Squelette du popup : en-tête, onglets, messages ; wrappers CLI (`status --extended`, `systemctl --user`, devices) dans src/voxtype.rs | 3 | src/app.rs, src/voxtype.rs | cosmic-applets/cosmic-applet-audio |
+| ✅ | Onglet Statut (modèle, backend, « indisponible ») | 2 | src/app.rs | cosmic-applets/cosmic-applet-audio |
+| ✅ | Onglet Orbe (toggle, dropdown position, segmented taille) | 2 | src/app.rs, src/config.rs | cosmic-applets |
