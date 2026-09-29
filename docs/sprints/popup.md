@@ -20,6 +20,14 @@ Maquette : https://claude.ai/artifact/Twxfwdprz56zxNrgHM3Rqp (disposition B).
 - semantic-release-cargo : `prepare(pluginConfig, context)` lit `context.nextRelease.version` ; lui passer la version seule lève un TypeError (release-2)
 - Plusieurs features qui ajoutent des champs/messages à `AppModel` passent chacune clippy seules mais pas ensemble (`struct_excessive_bools`, `too_many_lines`) : regrouper l'état par onglet (struct) et un `update_<feature>` par feature dès le brief (intégration lot 1)
 
+## Recette
+| # | Retour | Type | Branche | Points | Statut |
+|---|---|---|---|---|---|
+| 1 | Onglet Statut : infos correctes | — | — | — | validé |
+| 2 | Toggle daemon : arrête bien Parakeet | — | — | — | validé |
+| 3 | Micro : liste ALSA brute et illisible ; lister les sources PipeWire (nom lisible, sans monitors) et choisir via `pactl set-default-source`, Voxtype sur `default` | ajustement | feat/micro | 3 | à faire |
+| 4 | Orbe : l'indicateur de sélection masque les libellés S/M/L | ajustement | feat/applet | 1 | à faire |
+
 ## Bilan (fin de sprint)
 - Points prévus / livrés : …
 - Rétro : …
