@@ -1,38 +1,38 @@
-# Sprint popup
+# Popup sprint
 
-Branche : `sprint/popup`, depuis `develop` (créée depuis `main` au lancement)
-Vélocité : 20
+Branch: `sprint/popup`, from `develop` (created from `main` at kickoff)
+Velocity: 20
 
 ## Features
-- Popup : en-tête + onglets Statut et Orbe (docs/specs/applet.md) : 7 (lot 0 : 3, lot 1 : 4)
-- Choix du micro, onglet Micro (docs/specs/micro.md) : 3
-- Arrêt et relance du daemon (docs/specs/daemon.md) : 3
-- Branche develop et releases (docs/specs/release.md) : 7
+- Popup: header + Status and Orb tabs (docs/specs/applet.md): 7 (batch 0: 3, batch 1: 4)
+- Mic selection, Mic tab (docs/specs/micro.md): 3
+- Stopping and restarting the daemon (docs/specs/daemon.md): 3
+- Develop branch and releases (docs/specs/release.md): 7
 
-Livrable testable : popup à onglets dans le panneau ; couper le toggler libère le GPU ; `just release` publie une pré-release ; le binaire s'installe avec `--install`.
+Testable deliverable: tabbed popup in the panel; turning off the toggle frees the GPU; `just release` publishes a prerelease; the binary installs with `--install`.
 
-Maquette : https://claude.ai/artifact/Twxfwdprz56zxNrgHM3Rqp (disposition B).
+Mockup: https://claude.ai/artifact/Twxfwdprz56zxNrgHM3Rqp (layout B).
 
-## À capitaliser
-- Voxtype `audio.device` n'accepte que les noms ALSA de `voxtype info devices` ; un nom de source PipeWire (`alsa_input.…`) donne `Audio device not found` au démarrage de l'enregistrement, pas au démarrage du daemon (test réel)
-- Le sandbox `workspace-write` de Codex ne peut pas lancer cargo : la vérification des tâches Codex revient à Claude (sprint popup)
-- libcosmic : `Subscription::run_with(data, f)` recrée la subscription quand `data` change ; un compteur de génération force la reconnexion d'un suiveur (`voxtype status --follow`) après un start, `kill_on_drop` tue l'ancien enfant (daemon-1)
-- semantic-release-cargo : `prepare(pluginConfig, context)` lit `context.nextRelease.version` ; lui passer la version seule lève un TypeError (release-2)
-- Plusieurs features qui ajoutent des champs/messages à `AppModel` passent chacune clippy seules mais pas ensemble (`struct_excessive_bools`, `too_many_lines`) : regrouper l'état par onglet (struct) et un `update_<feature>` par feature dès le brief (intégration lot 1)
+## To capitalise
+- Voxtype `audio.device` only accepts ALSA names from `voxtype info devices`; a PipeWire source name (`alsa_input.…`) gives `Audio device not found` when recording starts, not when the daemon starts (real-world test)
+- Codex's `workspace-write` sandbox can't run cargo: verifying Codex tasks falls to Claude (popup sprint)
+- libcosmic: `Subscription::run_with(data, f)` recreates the subscription when `data` changes; a generation counter forces a follower (`voxtype status --follow`) to reconnect after a start, `kill_on_drop` kills the old child (daemon-1)
+- semantic-release-cargo: `prepare(pluginConfig, context)` reads `context.nextRelease.version`; passing it the version alone throws a TypeError (release-2)
+- Several features that add fields/messages to `AppModel` each pass clippy on their own but not together (`struct_excessive_bools`, `too_many_lines`): group state by tab (struct) and one `update_<feature>` per feature from the brief onward (batch 1 integration)
 
-## Recette
-| # | Retour | Type | Branche | Points | Statut |
+## Acceptance testing
+| # | Feedback | Type | Branch | Points | Status |
 |---|---|---|---|---|---|
-| 1 | Onglet Statut : infos correctes | — | — | — | validé |
-| 2 | Toggle daemon : arrête bien Parakeet | — | — | — | validé |
-| 3 | Micro : liste ALSA brute et illisible ; lister les sources PipeWire (nom lisible, sans monitors) et choisir via `pactl set-default-source`, Voxtype sur `default` | ajustement | feat/micro | 3 | validé |
-| 4 | Orbe : l'indicateur de sélection masque les libellés S/M/L | ajustement | feat/applet | 1 | validé |
+| 1 | Status tab: correct info | — | — | — | validated |
+| 2 | Daemon toggle: correctly stops Parakeet | — | — | — | validated |
+| 3 | Mic: raw, unreadable ALSA list; list PipeWire sources (readable name, no monitors) and select via `pactl set-default-source`, Voxtype on `default` | adjustment | feat/micro | 3 | validated |
+| 4 | Orb: the selection indicator hides the S/M/L labels | adjustment | feat/applet | 1 | validated |
 
-## Bilan (fin de sprint)
-- Points prévus / livrés : 20 / 20 (+4 en recette)
-- Marché : recette structurée (4 retours tracés, 2 validés d'emblée) ; intégration dans `tmp/integ` avant la démo ; première pré-release 1.0.0-develop.1 via `just release`
-- Raté → règle :
-  - Micro spécifié sur les noms ALSA de Voxtype, illisibles, refait en démo → valider les listes système sur les données réelles de la machine (skill archi du projet)
-  - `target/` des worktrees a rempli `/tmp` (tmpfs), verify planté → worktrees dans `.worktrees/` du repo, sur disque (skills sprint et recette)
-  - Features passant clippy seules mais pas ensemble sur `AppModel` → état par onglet en struct et `update_<feature>` dès le brief (skill archi du projet)
-- Capitalisé : `tech/linux/pipewire-audio-sources`, `tech/cosmic/libcosmic-applet-widgets`, `tech/rust/cargo-worktrees-tmpfs`, `tech/release/semantic-release-cargo` (créées) ; `voxtype-integration`, `codex-sandbox-limits` (mises à jour)
+## Outcome (end of sprint)
+- Planned / delivered points: 20 / 20 (+4 in acceptance testing)
+- Worked: structured acceptance testing (4 tracked feedback items, 2 validated right away); integration in `tmp/integ` before the demo; first prerelease 1.0.0-develop.1 via `just release`
+- Failed → rule:
+  - Mic specified on Voxtype's unreadable ALSA names, redone during the demo → validate system lists against the machine's real data (project's archi skill)
+  - Worktrees' `target/` filled up `/tmp` (tmpfs), verify crashed → worktrees in the repo's `.worktrees/`, on disk (sprint and recette skills)
+  - Features passing clippy individually but not together on `AppModel` → state per tab as a struct and `update_<feature>` from the brief onward (project's archi skill)
+- Capitalised: `tech/linux/pipewire-audio-sources`, `tech/cosmic/libcosmic-applet-widgets`, `tech/rust/cargo-worktrees-tmpfs`, `tech/release/semantic-release-cargo` (created); `voxtype-integration`, `codex-sandbox-limits` (updated)

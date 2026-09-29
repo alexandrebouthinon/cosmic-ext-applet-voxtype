@@ -1,29 +1,29 @@
-# Sprint finitions
+# Finitions sprint
 
-Branche : `sprint/finitions`, depuis `develop`
-Vélocité : 20 (petit sprint, hors backlog)
+Branch: `sprint/finitions`, from `develop`
+Velocity: 20 (small sprint, outside the backlog)
 
 ## Features
-- Halo de l'orbe, voile sombre (docs/specs/halo.md) : 5
-- Traduction française (docs/specs/i18n-fr.md) : 4
+- Orb halo, dark veil (docs/specs/halo.md): 5
+- French translation (docs/specs/i18n-fr.md): 4
 
-Pas de lot 0 : aucun contrat partagé entre les deux features.
+No batch 0: no shared contract between the two features.
 
-Livrable testable : l'orbe s'affiche avec un voile lisse qui suit la voix, sans bandes ; avec `LANG=fr_FR.UTF-8`, l'applet est en français.
+Testable deliverable: the orb shows with a smooth veil that follows the voice, with no banding; with `LANG=fr_FR.UTF-8`, the applet is in French.
 
-Maquette : https://claude.ai/artifact/CYw8gJCW6DM68gC6fsGHab (variante B).
+Mockup: https://claude.ai/artifact/CYw8gJCW6DM68gC6fsGHab (variant B).
 
-## À capitaliser
+## To capitalise
 
-## Recette
-| # | Retour | Type | Branche | Points | Statut |
+## Acceptance testing
+| # | Feedback | Type | Branch | Points | Status |
 |---|---|---|---|---|---|
-| 1 | Onglet Microphone trop long : « Micro » / « Mic » | ajustement | feat/i18n-fr | 1 | validé |
-| 2 | Libellé de l'interrupteur de l'orbe trop long, pousse le bouton hors écran : « Activer » / « Enable » | ajustement | feat/i18n-fr | 1 | validé |
+| 1 | Microphone tab too long: "Micro" / "Mic" | adjustment | feat/i18n-fr | 1 | validated |
+| 2 | Orb switch label too long, pushes the button off screen: "Activer" / "Enable" | adjustment | feat/i18n-fr | 1 | validated |
 
-## Bilan (fin de sprint)
-- Points prévus / livrés : 9 / 9 (+2 en recette)
-- Marché : maquette en 3 variantes, voile choisi du premier coup ; voile en disques emboîtés, lisse et sans couture.
-- Raté → règle :
-  - Libellés FR trop longs (onglet, interrupteur de l'orbe) et « Backend » traduit à tort → libellés courts, termes techniques non traduits (piège `archi`)
-- Capitalisé : `tech/cosmic/libcosmic-layer-surface-rendering` (voile radial dessiné sous iced), `tech/cosmic/cosmic-panel-applet-overlay` (traduction du `.desktop` par xdgen)
+## Outcome (end of sprint)
+- Planned / delivered points: 9 / 9 (+2 in acceptance testing)
+- Worked: mockup in 3 variants, veil chosen on the first try; veil in nested discs, smooth and seamless.
+- Failed → rule:
+  - FR labels too long (tab, orb switch) and "Backend" mistakenly translated → short labels, technical terms not translated (`archi` pitfall)
+- Capitalised: `tech/cosmic/libcosmic-layer-surface-rendering` (radial veil drawn under iced), `tech/cosmic/cosmic-panel-applet-overlay` (`.desktop` translation via xdgen)

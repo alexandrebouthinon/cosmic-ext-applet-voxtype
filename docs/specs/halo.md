@@ -1,41 +1,41 @@
-# Halo de l'orbe
+# Orb halo
 
-## Besoin
-L'utilisateur dicte avec l'orbe à l'écran. Le flou du compositeur, approché par 24 bandes, montre des marches, un bord franc et des fentes où le fond passe (très visible sur fond vif). On le remplace par un voile sombre dessiné, lisse, qui suit la voix.
+## Need
+The user dictates with the orb on screen. The compositor blur, approximated by 24 bands, shows stepping, a hard edge and slits where the background shows through (very visible on a bright background). It is replaced by a drawn, smooth dark veil that follows the voice.
 
-## Parcours
-1. La dictée démarre : l'orbe apparaît en fondu avec son voile.
-2. Pendant la parole : le voile s'étend et se densifie avec le niveau lissé du micro (même lissage que l'orbe).
-3. Silence : il revient à sa taille de repos.
-4. Fin : il disparaît en fondu avec l'orbe.
+## Flow
+1. Dictation starts: the orb fades in with its veil.
+2. While speaking: the veil expands and thickens with the smoothed mic level (same smoothing as the orb).
+3. Silence: it returns to its resting size.
+4. End: it fades out with the orb.
 
-## Cas d'erreur et limites
-- Pas de flux audio (socket absent) : niveau 0, voile au repos, comme l'orbe aujourd'hui.
-- Transcription : même voile ; seuls les grains changent de couleur.
-- Tailles S/M/L : le voile est proportionnel au rayon de l'orbe, jamais coupé par le bord de la surface.
+## Edge cases and limits
+- No audio stream (socket missing): level 0, veil at rest, same as the orb today.
+- Transcription: same veil; only the grains change color.
+- S/M/L sizes: the veil is proportional to the orb's radius, never clipped by the surface edge.
 
-## Hors-périmètre
-- Flou réel de l'arrière-plan (supprimé, plus de requête `blur` au compositeur).
-- Halo coloré, réglage du voile dans le popup.
+## Out of scope
+- Real background blur (removed, no more `blur` request to the compositor).
+- Colored halo, veil setting in the popup.
 
-## Critères d'acceptation
-- [ ] Plus aucun appel au protocole de flou ni de découpage en bandes dans `src/overlay/`.
-- [ ] Voile radial sombre (variante B de la maquette) : cœur ≈ 0,42 d'opacité, portée 1,9 × rayon au repos, jusqu'à 2,45 × rayon et 0,54 d'opacité au niveau max.
-- [ ] Profil d'opacité continu et décroissant jusqu'à 0 au bord (test unitaire), sans marche visible sur fond vif au zoom ×2 de l'écran.
-- [ ] Le voile tient dans la surface pour les 3 tailles (test unitaire).
-- [ ] Le voile suit le fondu d'apparition et de disparition.
+## Acceptance criteria
+- [ ] No more calls to the blur protocol or band-splitting in `src/overlay/`.
+- [ ] Dark radial veil (mockup variant B): core ≈ 0.42 opacity, reach 1.9 × radius at rest, up to 2.45 × radius and 0.54 opacity at max level.
+- [ ] Continuous opacity profile decreasing to 0 at the edge (unit test), with no visible stepping on a bright background at 2× screen zoom.
+- [ ] The veil fits within the surface for all 3 sizes (unit test).
+- [ ] The veil follows the fade-in and fade-out.
 
-## Choix techniques
-- Rendu : voile dessiné dans le canvas de l'orbe (tranché : « halo dessiné seul », variante B).
-- Dégradé : iced n'a pas de dégradé radial ; disques emboîtés tous les 1 px, du bord vers le centre, chacun ajoutant l'opacité manquante (des anneaux disjoints laisseraient des coutures d'anticrénelage), profil tiré d'une fonction pure et testée.
-- Voile dessiné même quand le thème n'a pas « interface givrée » (il ne dépend plus du compositeur).
+## Technical choices
+- Rendering: veil drawn in the orb's canvas (decided by the user: "halo drawn alone", variant B).
+- Gradient: iced has no radial gradient; nested discs every 1 px, from the edge to the center, each adding the missing opacity (disjoint rings would leave anti-aliasing seams), profile drawn from a pure, tested function.
+- Veil drawn even when the theme doesn't have "frosted interface" (it no longer depends on the compositor).
 
-## Hypothèses
+## Assumptions
 
-## Questions en attente
+## Open questions
 
-## Tâches
-| Lot | Tâche | Points | Fichiers | Fichier de référence |
+## Tasks
+| Batch | Task | Points | Files | Reference file |
 |---|---|---|---|---|
-| 1 | Fonction de profil du voile (portée, opacité selon distance et niveau) + tests | 2 | `src/overlay/view.rs` | `view.rs` (`radius`, `mix` et leurs tests) |
-| 1 | Dessin du voile en anneaux dans `Orb::draw` (niveau passé à `Orb`), suppression du flou compositeur (`disc`, `BLUR_*`, `blur`) | 3 | `src/overlay/view.rs`, `src/overlay/mod.rs` | `Orb::draw` |
+| 1 | Veil profile function (reach, opacity based on distance and level) + tests | 2 | `src/overlay/view.rs` | `view.rs` (`radius`, `mix` and their tests) |
+| 1 | Veil ring drawing in `Orb::draw` (level passed to `Orb`), removal of compositor blur (`disc`, `BLUR_*`, `blur`) | 3 | `src/overlay/view.rs`, `src/overlay/mod.rs` | `Orb::draw` |

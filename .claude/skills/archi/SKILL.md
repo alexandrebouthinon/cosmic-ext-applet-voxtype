@@ -3,42 +3,42 @@ name: archi
 description: "Use when writing a brief for a subagent, Codex or Copilot, or before coding in an unfamiliar module of cosmic-ext-applet-voxtype: modules, where new code goes, reference files, pitfalls."
 ---
 
-# Architecture de cosmic-ext-applet-voxtype
+# Architecture of cosmic-ext-applet-voxtype
 
-Un seul binaire, deux processus : l'applet (lancée par cosmic-panel) et l'overlay (`--overlay`, enfant de l'applet). `src/main.rs` choisit selon l'argument.
+A single binary, two processes: the applet (launched by cosmic-panel) and the overlay (`--overlay`, a child of the applet). `src/main.rs` picks one based on the argument.
 
 ## Modules
-- `src/app.rs` : applet du panneau (icône, popup, toggle overlay). Lance et tue l'enfant `--overlay` (`OverlayChild`, kill + wait au Drop). Dépend de `voxtype`, `config`.
-- `src/overlay/mod.rs` : app libcosmic sans fenêtre principale ; crée/détruit la layer surface click-through selon l'état Voxtype, fade, blur en disque. Quitte si `parent_id()` change.
-- `src/overlay/particles.rs` : simulation pure et déterministe (seed), sans iced. Testable seule.
-- `src/overlay/audio.rs` : lecture de `$XDG_RUNTIME_DIR/voxtype/audio.sock` (trames 16 octets) + lissage.
-- `src/overlay/view.rs` : dessin canvas et palette depuis le thème COSMIC.
-- `src/voxtype.rs` : client CLI (`voxtype status --follow --format json`), `State`, `Event`. Partagé par les deux processus.
-- `src/config.rs` : cosmic-config (`show_overlay`, position, taille), partagé ; l'overlay lit l'APP_ID de l'applet.
+- `src/app.rs`: panel applet (icon, popup, overlay toggle). Launches and kills the `--overlay` child (`OverlayChild`, kill + wait on Drop). Depends on `voxtype`, `config`.
+- `src/overlay/mod.rs`: libcosmic app with no main window; creates/destroys the click-through layer surface based on Voxtype state, fade, disc blur. Exits if `parent_id()` changes.
+- `src/overlay/particles.rs`: pure, deterministic simulation (seed), no iced. Testable on its own.
+- `src/overlay/audio.rs`: reads `$XDG_RUNTIME_DIR/voxtype/audio.sock` (16-byte frames) + smoothing.
+- `src/overlay/view.rs`: canvas drawing and palette from the COSMIC theme.
+- `src/voxtype.rs`: CLI client (`voxtype status --follow --format json`), `State`, `Event`. Shared by both processes.
+- `src/config.rs`: cosmic-config (`show_overlay`, position, size), shared; the overlay reads the applet's APP_ID.
 
-## Où mettre du nouveau code
-| Type | Emplacement | Fichier de référence |
+## Where to put new code
+| Type | Location | Reference file |
 |---|---|---|
-| UI du panneau / popup | `src/app.rs` | cosmic-applets `cosmic-applet-audio` |
-| Réglage persistant | `src/config.rs` (+ bump `Config::VERSION` si rupture) | `src/config.rs` |
-| Appel à Voxtype | `src/voxtype.rs`, CLI seulement | `parse_status_line` + ses tests |
-| Logique d'animation | `src/overlay/particles.rs` (pure, testée) | `src/overlay/particles.rs` |
-| Rendu | `src/overlay/view.rs` | `src/overlay/view.rs` |
-| Texte affiché | `i18n/en/*.ftl` + `fl!` | `src/app.rs` |
+| Panel / popup UI | `src/app.rs` | cosmic-applets `cosmic-applet-audio` |
+| Persistent setting | `src/config.rs` (+ bump `Config::VERSION` on breaking change) | `src/config.rs` |
+| Call to Voxtype | `src/voxtype.rs`, CLI only | `parse_status_line` + its tests |
+| Animation logic | `src/overlay/particles.rs` (pure, tested) | `src/overlay/particles.rs` |
+| Rendering | `src/overlay/view.rs` | `src/overlay/view.rs` |
+| Displayed text | `i18n/en/*.ftl` + `fl!` | `src/app.rs` |
 
 ## Conventions
-- Logique pure hors des `update`/`view`, avec tests unitaires dans le même fichier.
-- Subscriptions coûteuses (tick 60 fps, socket audio) actives seulement quand la surface existe : 0 % CPU au repos.
-- Couleurs toujours tirées du thème COSMIC actif, jamais codées en dur.
-- Clippy pedantic en `-D warnings` : exceptions par `#[expect(..., reason = ...)]`.
+- Pure logic outside `update`/`view`, with unit tests in the same file.
+- Expensive subscriptions (60 fps tick, audio socket) active only when the surface exists: 0% CPU at rest.
+- Colors always drawn from the active COSMIC theme, never hardcoded.
+- Clippy pedantic with `-D warnings`: exceptions via `#[expect(..., reason = ...)]`.
 
-## Pièges
-- Jamais de layer surface dans l'applet : cosmic-panel les proxifie. L'overlay est un processus séparé, avec `X-HostWaylandDisplay=true` dans le `.desktop`.
-- libcosmic floute toute la surface par défaut : garder `core.set_auto_blur(Default::default())`. Pas de flou compositeur (bandes visibles) : l'orbe dessine son propre voile radial (`view.rs`).
-- Tests panneau : `just install-user` puis `pkill -x cosmic-panel` (relancé par la session). `Exec=` absolu obligatoire.
-- `pkill -f` : ancrer le motif (`'^[^ ]*cosmic-ext-applet-voxtype --overlay$'`), sinon il tue son propre shell.
-- `just run` n'est pas le rendu du panneau ; l'overlay seul : `cargo run -- --overlay` (quitte si son parent meurt).
-- Voxtype : CLI uniquement, jamais modifié ni forké.
-- Listes système (micros, sorties…) : valider en cadrage sur les données réelles de la machine, face à ce qu'affiche COSMIC. Voxtype ne voit que les PCM ALSA ; les micros passent par PipeWire (`src/pipewire.rs`), Voxtype restant sur `default`.
-- `AppModel` : l'état de chaque onglet dans sa propre struct et un `update_<feature>` par feature, dès le brief. Sinon, chaque feature passe clippy seule mais plus une fois réunies (`struct_excessive_bools`, `too_many_lines`).
-- Traductions : libellés courts sur les onglets et à côté des contrôles (≈ 12 caractères max), sinon le contrôle sort du popup ; termes techniques (Backend…) non traduits.
+## Pitfalls
+- Never a layer surface in the applet: cosmic-panel proxies them. The overlay is a separate process, with `X-HostWaylandDisplay=true` in the `.desktop` file.
+- libcosmic blurs the whole surface by default: keep `core.set_auto_blur(Default::default())`. No compositor blur (visible banding): the orb draws its own radial veil (`view.rs`).
+- Panel tests: `just install-user` then `pkill -x cosmic-panel` (relaunched by the session). Absolute `Exec=` is required.
+- `pkill -f`: anchor the pattern (`'^[^ ]*cosmic-ext-applet-voxtype --overlay$'`), otherwise it kills its own shell.
+- `just run` is not the panel rendering; overlay alone: `cargo run -- --overlay` (exits if its parent dies).
+- Voxtype: CLI only, never modified or forked.
+- System lists (mics, outputs…): validate during scoping against the machine's real data, compared to what COSMIC shows. Voxtype only sees raw ALSA PCMs; mics go through PipeWire (`src/pipewire.rs`), with Voxtype staying on `default`.
+- `AppModel`: each tab's state in its own struct and one `update_<feature>` per feature, from the brief onward. Otherwise, each feature passes clippy on its own but not once combined (`struct_excessive_bools`, `too_many_lines`).
+- Translations: short labels on tabs and next to controls (≈ 12 characters max), otherwise the control overflows the popup; technical terms (Backend…) stay untranslated.

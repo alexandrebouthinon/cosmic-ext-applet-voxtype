@@ -1,41 +1,41 @@
-# Traduction française
+# French translation
 
-## Besoin
-L'utilisateur a un système en français : l'applet doit lui parler français, et en anglais à tous les autres.
+## Need
+The user has a French-language system: the applet must speak French to them, and English to everyone else.
 
-## Parcours
-1. Au démarrage, l'applet lit la langue du système (`LANG`, `LC_*` via `DesktopLanguageRequester`, déjà en place).
-2. Langue `fr` quelle que soit la variante (fr_FR, fr_CA, fr_BE…) : tout en français.
-3. Toute autre langue : anglais.
-4. Nom, description et mots-clés dans les réglages du panneau et le centre d'applications : traduits via les fichiers desktop et metainfo générés.
+## Flow
+1. On startup, the applet reads the system language (`LANG`, `LC_*` via `DesktopLanguageRequester`, already in place).
+2. Language `fr` regardless of the variant (fr_FR, fr_CA, fr_BE…): everything in French.
+3. Any other language: English.
+4. Name, description and keywords in panel settings and the app center: translated via the generated desktop and metainfo files.
 
-## Cas d'erreur et limites
-- Clé absente du fichier français : repli sur l'anglais pour cette clé (jamais d'identifiant brut) ; un test empêche d'en livrer.
-- Libellés courts pour tenir dans le popup : onglet « Micro » / « Mic », interrupteur de l'orbe « Activer » / « Enable » (libellé fixe).
-- Messages techniques renvoyés par Voxtype ou `pactl`/`wpctl` : affichés tels quels, non traduits.
-- Changement de langue système : pris en compte au prochain lancement de l'applet.
+## Edge cases and limits
+- Key missing from the French file: falls back to English for that key (never a raw identifier); a test prevents shipping one.
+- Short labels to fit in the popup: "Micro" / "Mic" tab, orb switch "Activer" / "Enable" (fixed label).
+- Technical messages returned by Voxtype or `pactl`/`wpctl`: displayed as-is, not translated.
+- System language change: taken into account on the applet's next launch.
 
-## Hors-périmètre
-- Autres langues que fr et en.
-- Choix de la langue dans le popup.
+## Out of scope
+- Languages other than fr and en.
+- Language choice in the popup.
 
-## Critères d'acceptation
-- [ ] `i18n/fr/cosmic_ext_applet_voxtype.ftl` contient toutes les clés de l'anglais (test de parité).
-- [ ] `fr_CA` et `fr_FR` donnent le français, `de_DE` et `C` l'anglais (test de sélection).
-- [ ] Le `.desktop` généré contient `Name[fr]`, `Comment[fr]`, `Keywords[fr]`, et le metainfo son `summary` en fr.
-- [ ] Avec `LANG=fr_FR.UTF-8`, popup, erreurs et onglets en français au panneau.
-- [ ] Aucun libellé ne pousse un contrôle hors du popup, en français comme en anglais.
+## Acceptance criteria
+- [ ] `i18n/fr/cosmic_ext_applet_voxtype.ftl` contains all the English keys (parity test).
+- [ ] `fr_CA` and `fr_FR` give French, `de_DE` and `C` give English (selection test).
+- [ ] The generated `.desktop` file contains `Name[fr]`, `Comment[fr]`, `Keywords[fr]`, and the metainfo its `summary` in fr.
+- [ ] With `LANG=fr_FR.UTF-8`, popup, errors and tabs in French on the panel.
+- [ ] No label pushes a control out of the popup, in French or English.
 
-## Choix techniques
-- Détection : `DesktopLanguageRequester` + négociation d'i18n-embed, repli `en` (existant, tranché : toute locale fr_*).
-- Périmètre : applet + fichiers desktop et metainfo (tranché).
+## Technical choices
+- Detection: `DesktopLanguageRequester` + i18n-embed negotiation, fallback `en` (existing, decided by the user: any fr_* locale).
+- Scope: applet + desktop and metainfo files (decided by the user).
 
-## Hypothèses
+## Assumptions
 
-## Questions en attente
+## Open questions
 
-## Tâches
-| Lot | Tâche | Points | Fichiers | Fichier de référence |
+## Tasks
+| Batch | Task | Points | Files | Reference file |
 |---|---|---|---|---|
-| 1 | Fichier français complet, vérifié dans le `.desktop` et le metainfo générés | 2 | `i18n/fr/cosmic_ext_applet_voxtype.ftl` | `i18n/en/cosmic_ext_applet_voxtype.ftl` |
-| 1 | Tests de parité des clés et de sélection de la langue | 2 | `src/i18n.rs` | `src/i18n.rs` |
+| 1 | Complete French file, verified in the generated `.desktop` and metainfo | 2 | `i18n/fr/cosmic_ext_applet_voxtype.ftl` | `i18n/en/cosmic_ext_applet_voxtype.ftl` |
+| 1 | Key parity and language selection tests | 2 | `src/i18n.rs` | `src/i18n.rs` |

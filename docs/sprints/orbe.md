@@ -1,35 +1,35 @@
-# Sprint orbe
+# Orbe sprint
 
-Branche : `sprint/orbe`
-Vélocité : 20
+Branch: `sprint/orbe`
+Velocity: 20
 
 ## Features
-- Overlay « orbe de particules » (docs/specs/overlay.md) : 18 (lot 0 : 4, lot 1 : 14)
-- Icône du panneau selon l'état (docs/specs/applet.md, tâche lot 1) : 2
+- "Particle orb" overlay (docs/specs/overlay.md): 18 (batch 0: 4, batch 1: 14)
+- Panel icon based on state (docs/specs/applet.md, batch 1 task): 2
 
-Livrable testable : applet dans le panneau, icône à jour, orbe 10b qui apparaît pendant la dictée et réagit à la voix.
+Testable deliverable: applet in the panel, icon up to date, orb 10b that appears during dictation and reacts to the voice.
 
-## À capitaliser
-- L'OSD gtk4 de Voxtype crashe sur cosmic-comp 1.9 : au premier masquage, il détruit la `zwlr_layer_surface`, puis fait un attach nil + commit, et le compositeur le déconnecte (cadrage).
-- Niveau micro de Voxtype : `$XDG_RUNTIME_DIR/voxtype/audio.sock`, trames de 16 octets à 100 Hz, ordre natif (seq u32, min f32, max f32, peak_dbfs f32, borné à -120) (voxtype src/osd/ipc.rs).
-- `voxtype config set audio.device` ne s'applique qu'après `systemctl --user restart voxtype` (cadrage).
+## To capitalise
+- Voxtype's gtk4 OSD crashes on cosmic-comp 1.9: on first hide, it destroys the `zwlr_layer_surface`, then does a nil attach + commit, and the compositor disconnects it (scoping).
+- Voxtype mic level: `$XDG_RUNTIME_DIR/voxtype/audio.sock`, 16-byte frames at 100 Hz, native order (seq u32, min f32, max f32, peak_dbfs f32, clamped to -120) (voxtype src/osd/ipc.rs).
+- `voxtype config set audio.device` only applies after `systemctl --user restart voxtype` (scoping).
 
-- cosmic-panel embarque un compositeur qui accepte le layer-shell des applets et **proxifie** leurs surfaces (recopie EGL, zone d'input non transmise). Une overlay propre = processus séparé ; `X-HostWaylandDisplay` dans le `.desktop` de l'applet fait passer le vrai `WAYLAND_DISPLAY` (cosmic-panel `wrapper_space.rs`).
-- libcosmic : layer surface click-through = `SctkLayerSurfaceSettings { input_zone: Some(vec![]) }` ; app sans fenêtre principale = `Settings::default().no_main_window(true)` (spike, vérifié).
-- Canvas iced : 600 `Path::circle` à 60 fps coûtent ~14 % d'un cœur (tessellation CPU), contre ~4 % en `fill_rectangle` (spike, mesuré).
-- libcosmic floute toute la layer surface (carré) si le thème a `frosted_system_interface` : le couper avec `core.set_auto_blur(Default::default())`, puis `blur(id, Some(Vec<Rectangle>))` pour une zone précise ; des rectangles seulement, donc un disque = bandes horizontales (surface lifecycle, vérifié).
-- cosmic-panel n'a pas `~/.local/bin` dans son PATH : une applet installée en user doit avoir un `Exec=` absolu (install-user, vérifié).
-- Processus enfant qui surveille `parent_id()` : `sh -c 'cmd'` fait un exec direct et le parent disparaît ; ajouter `; true` pour les tests manuels. `pkill -f` matche aussi le shell qui le lance : ancrer le motif (`'^[^ ]*bin --flag$'`) (vérifié).
-- Mesurer le CPU d'un process : champs 14+15 de `/proc/PID/stat` avant/après `timeout 5 tail -f /dev/null` (vérifié).
-- Palette COSMIC : les couleurs stock (`theme.palette.accent_*`) sont pastel ; les saturer pour un rendu néon sur fond sombre (vérifié).
-- Codex en sandbox `workspace-write` ne peut pas lancer `cargo clippy --fix` (vérifié).
+- cosmic-panel embeds a compositor that accepts applets' layer-shell and **proxies** their surfaces (EGL re-copy, input zone not passed through). A clean overlay = separate process; `X-HostWaylandDisplay` in the applet's `.desktop` passes through the real `WAYLAND_DISPLAY` (cosmic-panel `wrapper_space.rs`).
+- libcosmic: click-through layer surface = `SctkLayerSurfaceSettings { input_zone: Some(vec![]) }`; app with no main window = `Settings::default().no_main_window(true)` (spike, verified).
+- iced canvas: 600 `Path::circle` at 60 fps cost ~14% of one core (CPU tessellation), vs ~4% with `fill_rectangle` (spike, measured).
+- libcosmic blurs the whole layer surface (square) if the theme has `frosted_system_interface`: turn it off with `core.set_auto_blur(Default::default())`, then `blur(id, Some(Vec<Rectangle>))` for a precise area; rectangles only, so a disc = horizontal bands (surface lifecycle, verified).
+- cosmic-panel doesn't have `~/.local/bin` in its PATH: a user-installed applet must have an absolute `Exec=` (install-user, verified).
+- Child process watching `parent_id()`: `sh -c 'cmd'` does a direct exec and the parent disappears; add `; true` for manual tests. `pkill -f` also matches the shell that launches it: anchor the pattern (`'^[^ ]*bin --flag$'`) (verified).
+- Measuring a process's CPU: fields 14+15 of `/proc/PID/stat` before/after `timeout 5 tail -f /dev/null` (verified).
+- COSMIC palette: the stock colors (`theme.palette.accent_*`) are pastel; saturate them for a neon look on a dark background (verified).
+- Codex in `workspace-write` sandbox can't run `cargo clippy --fix` (verified).
 
-## Bilan (fin de sprint)
-- Points prévus / livrés : 20 / 20
-- Marché : spike du lot 0 qui a révélé tôt le proxy de cosmic-panel ; mesures réelles (CPU /proc, screenshots) ; overlay à 0 % CPU au repos.
-- Raté → règle :
-  - Règle LSP répétée par l'utilisateur → discover active les LSP de la stack dans les réglages du projet et propose d'installer les serveurs manquants (skill discover)
-  - Applet masquée sans voxtype, corrigé en démo → un cas d'erreur reste visible et distinguable d'une panne de l'outil (skill cadrage)
-  - Branche `feat/applet-icon` périmée trouvée en fin de sprint → ménage branches et worktrees en fin de lot (skill sprint)
-  - Codex ne peut pas lancer `clippy --fix` → verify relancé seulement si le rapport échoue, manque ou si le diff a changé (orchestrate, reviewer)
-- Capitalisé : tech/cosmic/cosmic-panel-applet-overlay, tech/cosmic/libcosmic-layer-surface-rendering, tech/voxtype/voxtype-integration, tech/linux/process-watchdog-pitfalls, tech/codex/codex-sandbox-limits
+## Outcome (end of sprint)
+- Planned / delivered points: 20 / 20
+- Worked: batch 0 spike that revealed the cosmic-panel proxy early; real measurements (CPU /proc, screenshots); overlay at 0% CPU at rest.
+- Failed → rule:
+  - LSP rule repeated by the user → discover enables the stack's LSPs in the project settings and offers to install missing servers (discover skill)
+  - Applet hidden with no voxtype, fixed during the demo → an error case stays visible and distinguishable from a tool failure (cadrage skill)
+  - Stale `feat/applet-icon` branch found at the end of the sprint → clean up branches and worktrees at the end of each batch (sprint skill)
+  - Codex can't run `clippy --fix` → verify is rerun only if the report fails, is missing, or the diff changed (orchestrate, reviewer)
+- Capitalised: tech/cosmic/cosmic-panel-applet-overlay, tech/cosmic/libcosmic-layer-surface-rendering, tech/voxtype/voxtype-integration, tech/linux/process-watchdog-pitfalls, tech/codex/codex-sandbox-limits

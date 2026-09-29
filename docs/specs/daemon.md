@@ -1,38 +1,38 @@
-# Arrêt et relance du daemon
+# Stopping and restarting the daemon
 
-## Besoin
-Libérer le GPU (pour un jeu, par exemple) en arrêtant Voxtype depuis le panneau, puis le relancer quand on veut dicter.
+## Need
+Free up the GPU (for a game, for example) by stopping Voxtype from the panel, then restart it when you want to dictate.
 
-## Parcours
-1. Le toggler de l'en-tête du popup reflète `systemctl --user is-active voxtype`.
-2. Le couper : `systemctl --user stop voxtype`, effet immédiat, même pendant une dictée. Message « GPU libéré, Voxtype redémarrera à la prochaine connexion ».
-3. L'activer : `systemctl --user start voxtype` ; l'applet se reconnecte au flux d'état.
+## Flow
+1. The popup header toggle reflects `systemctl --user is-active voxtype`.
+2. Turning it off: `systemctl --user stop voxtype`, immediate effect, even during dictation. Message "GPU freed, Voxtype will restart at next login".
+3. Turning it on: `systemctl --user start voxtype`; the applet reconnects to the state stream.
 
-## Cas d'erreur et limites
-- Arrêté par l'utilisateur (`inactive`) et en échec (`failed`) : même icône barrée ; l'en-tête dit « Arrêté » ou « En échec » avec l'indice `journalctl --user -u voxtype`.
-- Unité absente : toggler désactivé, message « Service introuvable : lancez `voxtype setup systemd` ».
-- Échec du stop ou du start : erreur inline sous l'en-tête, le toggler revient à l'état réel.
-- Arrêté hors applet (terminal) : l'état suit, sans action.
+## Edge cases and limits
+- Stopped by the user (`inactive`) and failed (`failed`): same crossed-out icon; the header says "Stopped" or "Failed" with the hint `journalctl --user -u voxtype`.
+- Unit missing: toggle disabled, message "Service not found: run `voxtype setup systemd`".
+- Stop or start failure: inline error under the header, the toggle reverts to the real state.
+- Stopped outside the applet (terminal): the state follows, with no action needed.
 
-## Hors-périmètre
-- Désactiver le démarrage à la connexion (`systemctl disable`).
-- Relance automatique à la fermeture d'un jeu.
+## Out of scope
+- Disabling startup on login (`systemctl disable`).
+- Automatic restart when closing a game.
 
-## Critères d'acceptation
-- [ ] Couper le toggler arrête le service en moins d'une seconde ; `nvidia-smi` (ou équivalent) ne montre plus Voxtype.
-- [ ] L'activer relance le service et l'icône revient à l'état normal sans autre action.
-- [ ] `inactive` et `failed` s'affichent différemment dans le popup.
-- [ ] Sans unité `voxtype.service`, le toggler est désactivé et le message donne la commande.
-- [ ] Un échec de commande s'affiche et le toggler reflète l'état réel.
+## Acceptance criteria
+- [ ] Turning off the toggle stops the service in under a second; `nvidia-smi` (or equivalent) no longer shows Voxtype.
+- [ ] Turning it on restarts the service and the icon returns to normal without further action.
+- [ ] `inactive` and `failed` display differently in the popup.
+- [ ] Without a `voxtype.service` unit, the toggle is disabled and the message gives the command.
+- [ ] A command failure is displayed and the toggle reflects the real state.
 
-## Choix techniques
-- `systemctl --user` via la CLI, pas de D-Bus (tranché par l'utilisateur).
-- Arrêt simple, même en pleine dictée (tranché par l'utilisateur).
+## Technical choices
+- `systemctl --user` via the CLI, no D-Bus (decided by the user).
+- Simple stop, even mid-dictation (decided by the user).
 
-## Hypothèses
-- Aucune.
+## Assumptions
+- None.
 
-## Tâches
-| Lot | Tâche | Points | Fichiers | Fichier de référence |
+## Tasks
+| Batch | Task | Points | Files | Reference file |
 |---|---|---|---|---|
-| ✅ | Toggler du daemon, états inactive/failed/absent, erreurs | 3 | src/app.rs, src/voxtype.rs | cosmic-applets/cosmic-applet-audio |
+| ✅ | Daemon toggle, inactive/failed/missing states, errors | 3 | src/app.rs, src/voxtype.rs | cosmic-applets/cosmic-applet-audio |

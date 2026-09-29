@@ -1,41 +1,41 @@
-# Branche develop et releases
+# Develop branch and releases
 
-## Besoin
-Publier des versions propres de l'applet (tag, notes, binaire) sans travail manuel, et installer l'applet sans cloner le repo.
+## Need
+Publish clean versions of the applet (tag, notes, binary) with no manual work, and install the applet without cloning the repo.
 
-## Parcours
-1. Le travail arrive sur `develop` ; `just release` y publie une pré-release (`vX.Y.Z-develop.N`) : tag, notes, `Cargo.toml`, `Cargo.lock` et CHANGELOG commités, sans binaire.
-2. `develop` mergé sur `main` en fast-forward ; `just release` publie la version stable : tag, GitHub Release, CHANGELOG, bump de `Cargo.toml`, binaire x86_64 compilé en local et attaché.
-3. L'utilisateur télécharge le binaire et lance `cosmic-ext-applet-voxtype --install` : copie dans `~/.local/bin`, écrit le `.desktop` (avec `X-CosmicApplet=true` et `Exec=` absolu) et l'icône dans `~/.local/share`. `--uninstall` retire les trois.
-4. GitHub Actions lance `just verify` sur chaque push et PR.
+## Flow
+1. Work lands on `develop`; `just release` publishes a prerelease there (`vX.Y.Z-develop.N`): tag, notes, `Cargo.toml`, `Cargo.lock` and CHANGELOG committed, no binary.
+2. `develop` fast-forward merged into `main`; `just release` publishes the stable version: tag, GitHub Release, CHANGELOG, `Cargo.toml` bump, x86_64 binary built locally and attached.
+3. The user downloads the binary and runs `cosmic-ext-applet-voxtype --install`: copies it to `~/.local/bin`, writes the `.desktop` file (with `X-CosmicApplet=true` and an absolute `Exec=`) and the icon to `~/.local/share`. `--uninstall` removes all three.
+4. GitHub Actions runs `just verify` on every push and PR.
 
-## Cas d'erreur et limites
-- `just release` hors de `main`/`develop`, ou arbre sale : refus avec message.
-- Pas de commit `feat`/`fix` depuis la dernière version : pas de release, message de semantic-release.
-- `--install` quand `~/.local/bin` n'existe pas : le créer. Fichier déjà présent : remplacé.
+## Edge cases and limits
+- `just release` outside `main`/`develop`, or a dirty tree: refused with a message.
+- No `feat`/`fix` commit since the last version: no release, semantic-release message.
+- `--install` when `~/.local/bin` doesn't exist: it's created. File already present: replaced.
 
-## Hors-périmètre
-- AppImage, Flatpak (le sandbox bloque la CLI voxtype, systemctl et `audio.sock`), deb, rpm.
-- Builds multi-arch en CI (quand le repo sera public).
+## Out of scope
+- AppImage, Flatpak (the sandbox blocks the voxtype CLI, systemctl and `audio.sock`), deb, rpm.
+- Multi-arch builds in CI (once the repo is public).
 
-## Critères d'acceptation
-- [ ] La branche `develop` existe sur le remote et `CLAUDE.md` décrit le flux.
-- [ ] `just release` sur `develop` crée une pré-release sans binaire.
-- [ ] `just release` sur `main` crée une release avec le binaire attaché.
-- [ ] Le binaire téléchargé, avec `--install`, apparaît dans COSMIC Settings → Panel ; `--uninstall` le retire.
-- [ ] La CI échoue si `just verify` échoue.
+## Acceptance criteria
+- [ ] The `develop` branch exists on the remote and `CLAUDE.md` describes the flow.
+- [ ] `just release` on `develop` creates a prerelease with no binary.
+- [ ] `just release` on `main` creates a release with the binary attached.
+- [ ] The downloaded binary, with `--install`, appears in COSMIC Settings → Panel; `--uninstall` removes it.
+- [ ] CI fails if `just verify` fails.
 
-## Choix techniques
-- semantic-release + semantic-release-cargo, lancé en local via `just release` (tranché par l'utilisateur).
-- Binaire seul avec `--install`/`--uninstall`, `.desktop` et icône embarqués (tranché par l'utilisateur).
-- Pré-releases sans binaire, x86_64 seulement (tranché par l'utilisateur).
+## Technical choices
+- semantic-release + semantic-release-cargo, run locally via `just release` (decided by the user).
+- Binary alone with `--install`/`--uninstall`, embedded `.desktop` and icon (decided by the user).
+- Prereleases with no binary, x86_64 only (decided by the user).
 
-## Hypothèses
-- Aucune.
+## Assumptions
+- None.
 
-## Tâches
-| Lot | Tâche | Points | Fichiers | Fichier de référence |
+## Tasks
+| Batch | Task | Points | Files | Reference file |
 |---|---|---|---|---|
-| ✅ | Branche develop, release.config.mjs, package.json, recette `just release`, CHANGELOG | 3 | release.config.mjs, package.json, justfile, CLAUDE.md | — |
-| ✅ | `--install` / `--uninstall` (desktop + icône embarqués) | 3 | src/main.rs, src/install.rs | justfile (recette install-user) |
-| ✅ | Workflow CI `just verify` | 1 | .github/workflows/verify.yml | — |
+| ✅ | Develop branch, release.config.mjs, package.json, `just release` recipe, CHANGELOG | 3 | release.config.mjs, package.json, justfile, CLAUDE.md | — |
+| ✅ | `--install` / `--uninstall` (embedded desktop file + icon) | 3 | src/main.rs, src/install.rs | justfile (install-user recipe) |
+| ✅ | CI workflow `just verify` | 1 | .github/workflows/verify.yml | — |

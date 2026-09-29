@@ -1,42 +1,42 @@
-# Choix du micro
+# Mic selection
 
-## Besoin
-Choisir depuis le panneau le micro que Voxtype utilisera pour les prochaines dictées.
+## Need
+Choose from the panel which mic Voxtype will use for the next dictations.
 
-## Parcours
-1. Dans l'onglet Micro du popup, une liste montre les sources PipeWire (`pw-dump`, `media.class` `Audio/Source*`, virtuelles comme Easy Effects comprises, sans moniteurs), sous leur nom lisible (`node.description`), avec la source par défaut sélectionnée.
-2. L'utilisateur choisit une source : `pactl set-default-source <nom>`. Une mention indique que le micro change pour toutes les applis.
-3. Si Voxtype n'est pas sur `audio.device = default` : `voxtype config set audio.device default`, puis `systemctl --user restart voxtype` ; l'icône passe brièvement à « daemon arrêté ».
+## Flow
+1. In the popup's Mic tab, a list shows PipeWire sources (`pw-dump`, `media.class` `Audio/Source*`, including virtual ones like Easy Effects, no monitors), under their readable name (`node.description`), with the default source selected.
+2. The user picks a source: `pactl set-default-source <name>`. A note indicates the mic changes for all apps.
+3. If Voxtype isn't set to `audio.device = default`: `voxtype config set audio.device default`, then `systemctl --user restart voxtype`; the icon briefly switches to "daemon stopped".
 
-## Cas d'erreur et limites
-- Enregistrement ou transcription en cours : la liste est désactivée.
-- Daemon arrêté par l'utilisateur : `config set` seul, sans redémarrage ; le passage à `default` s'applique au prochain démarrage (message dans l'onglet).
-- Aucune source : message « aucun micro » dans l'onglet.
-- Échec de `pactl` : message d'erreur, la sélection ne change pas. Échec du `config set` ou du redémarrage : message d'erreur, la source par défaut reste changée.
+## Edge cases and limits
+- Recording or transcription in progress: the list is disabled.
+- Daemon stopped by the user: `config set` only, no restart; the switch to `default` applies on next startup (message in the tab).
+- No source: "no mic" message in the tab.
+- `pactl` failure: error message, the selection doesn't change. `config set` or restart failure: error message, the default source stays changed.
 
-## Hors-périmètre
-- Tester le micro (vu-mètre) dans le popup.
-- Capturer une sortie audio (moniteur) pour la transcrire (backlog, si l'usage apparaît).
+## Out of scope
+- Testing the mic (level meter) in the popup.
+- Capturing an audio output (monitor) for transcription (backlog, if the need arises).
 
-## Critères d'acceptation
-- [ ] La liste montre des noms lisibles (ex. Blue Microphones, Easy Effects Source), sans sorties ni moniteurs.
-- [ ] Choisir un micro change la source PipeWire par défaut ; la dictée suivante utilise ce micro.
-- [ ] Voxtype hors `default` : il y est remis et redémarré ; daemon arrêté, sans le relancer.
-- [ ] Impossible de changer de micro pendant un enregistrement.
-- [ ] Une erreur est affichée et rien ne change si la commande échoue.
+## Acceptance criteria
+- [ ] The list shows readable names (e.g. Blue Microphones, Easy Effects Source), with no outputs or monitors.
+- [ ] Choosing a mic changes the default PipeWire source; the next dictation uses that mic.
+- [ ] Voxtype off `default`: it's set back and restarted; if the daemon is stopped, it isn't relaunched.
+- [ ] Impossible to change mic during a recording.
+- [ ] An error is displayed and nothing changes if the command fails.
 
-## Choix techniques
-- Redémarrage automatique du service utilisateur (tranché par l'utilisateur).
+## Technical choices
+- Automatic restart of the user service (decided by the user).
 
-## Choix fonctionnels
-- Seulement les entrées : pas de sorties ni de moniteurs dans la liste (tranché par l'utilisateur).
-- Source des micros : PipeWire, pas `voxtype info devices` (PCM ALSA bruts, illisibles). Voxtype refuse les noms de sources PipeWire (`Audio device not found`, testé) : il reste sur `default` et l'applet change la source par défaut du système (tranché par l'utilisateur en recette).
-- `pw-dump` plutôt que `pactl --format=json` : ce dernier produit un JSON invalide avec des descriptions accentuées (pactl 17).
+## Functional choices
+- Inputs only: no outputs or monitors in the list (decided by the user).
+- Mic source: PipeWire, not `voxtype info devices` (raw ALSA PCMs, unreadable). Voxtype rejects PipeWire source names (`Audio device not found`, tested): it stays on `default` and the applet changes the system's default source instead (decided by the user during acceptance testing).
+- `pw-dump` rather than `pactl --format=json`: the latter produces invalid JSON with accented descriptions (pactl 17).
 
-## Hypothèses
-- Aucune.
+## Assumptions
+- None.
 
-## Tâches
-| Lot | Tâche | Points | Fichiers | Fichier de référence |
+## Tasks
+| Batch | Task | Points | Files | Reference file |
 |---|---|---|---|---|
-| ✅ | Liste des devices, sélection, config set + restart, erreurs | 3 | src/voxtype.rs, src/app.rs | cosmic-applets/cosmic-applet-audio |
+| ✅ | Device list, selection, config set + restart, errors | 3 | src/voxtype.rs, src/app.rs | cosmic-applets/cosmic-applet-audio |
