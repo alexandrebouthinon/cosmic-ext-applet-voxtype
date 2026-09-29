@@ -16,6 +16,10 @@ Maquette : https://claude.ai/artifact/CYw8gJCW6DM68gC6fsGHab (variante B).
 ## À capitaliser
 
 ## Recette
+| # | Retour | Type | Branche | Points | Statut |
+|---|---|---|---|---|---|
+| 1 | Onglet Microphone trop long : « Micro » / « Mic » | ajustement | feat/i18n-fr | 1 | validé |
+| 2 | Libellé de l'interrupteur de l'orbe trop long, pousse le bouton hors écran : « Activer » / « Enable » | ajustement | feat/i18n-fr | 1 | validé |
 
 ## Bilan (fin de sprint)
 - Points prévus / livrés : …
