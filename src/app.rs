@@ -36,6 +36,10 @@ pub struct AppModel {
     daemon: Option<voxtype::Daemon>,
     /// Last command failure, shown under the popup header.
     error: Option<String>,
+    /// Confirmation shown after a successful stop until the popup is reopened.
+    stop_notice: bool,
+    daemon_pending: bool,
+    status_generation: u64,
 }
 
 /// Orb positions in the order shown by the position dropdown.
@@ -66,6 +70,8 @@ pub enum Message {
     SetSize(OverlaySize),
     SelectTab(segmented_button::Entity),
     Daemon(Result<voxtype::Daemon, String>),
+    ToggleDaemon(bool),
+    DaemonSet(bool, Result<(), String>),
 }
 
 /// Create a COSMIC application from the app model
@@ -191,6 +197,18 @@ impl cosmic::Application for AppModel {
         };
         let content = widget::Column::new()
             .push(self.header())
+            .push_maybe(
+                matches!(self.daemon, None | Some(voxtype::Daemon::Missing))
+                    .then(|| widget::text::caption(fl!("daemon-missing"))),
+            )
+            .push_maybe(
+                (self.daemon == Some(voxtype::Daemon::Failed))
+                    .then(|| widget::text::caption(fl!("daemon-failed-hint"))),
+            )
+            .push_maybe(
+                self.stop_notice
+                    .then(|| widget::text::caption(fl!("daemon-stopped-notice"))),
+            )
             .push_maybe(self.error.as_deref().map(widget::text::caption))
             .push(widget::segmented_control::horizontal(&self.tabs).on_activate(Message::SelectTab))
             .push(tab)
@@ -208,7 +226,7 @@ impl cosmic::Application for AppModel {
     /// continue to execute for the duration that they remain in the batch.
     fn subscription(&self) -> Subscription<Self::Message> {
         Subscription::batch(vec![
-            voxtype::subscription().map(Message::Voxtype),
+            voxtype::subscription_with_generation(self.status_generation).map(Message::Voxtype),
             // Watch for application configuration changes.
             self.core()
                 .watch_config::<Config>(Self::APP_ID)
@@ -230,11 +248,16 @@ impl cosmic::Application for AppModel {
     fn update(&mut self, message: Self::Message) -> Task<cosmic::Action<Self::Message>> {
         match message {
             Message::Voxtype(voxtype::Event::Status { state, info }) => {
+                let stopped_changed =
+                    (self.state == voxtype::State::Stopped) != (state == voxtype::State::Stopped);
                 self.binary_missing = false;
                 self.state = state;
                 // A stopped daemon reports no info; keep the last known values for the popup.
                 if state != voxtype::State::Stopped {
                     self.info = info;
+                }
+                if stopped_changed {
+                    return Self::daemon_query();
                 }
             }
             Message::Voxtype(voxtype::Event::BinaryMissing) => self.binary_missing = true,
@@ -262,11 +285,15 @@ impl cosmic::Application for AppModel {
             Message::SelectTab(id) => self.tabs.activate(id),
             Message::Daemon(Ok(daemon)) => self.daemon = Some(daemon),
             Message::Daemon(Err(e)) => self.error = Some(e),
+            message @ (Message::ToggleDaemon(_) | Message::DaemonSet(..)) => {
+                return self.update_daemon(message);
+            }
             Message::TogglePopup => {
                 return if let Some(p) = self.popup.take() {
                     destroy_popup(p)
                 } else {
                     self.error = None;
+                    self.stop_notice = false;
                     let new_id = Id::unique();
                     self.popup.replace(new_id);
                     let mut popup_settings = self.core.applet.get_popup_settings(
@@ -281,12 +308,7 @@ impl cosmic::Application for AppModel {
                         .min_width(300.0)
                         .min_height(200.0)
                         .max_height(1080.0);
-                    Task::batch([
-                        get_popup(popup_settings),
-                        cosmic::task::future(async {
-                            cosmic::Action::App(Message::Daemon(voxtype::daemon().await))
-                        }),
-                    ])
+                    Task::batch([get_popup(popup_settings), Self::daemon_query()])
                 };
             }
             Message::PopupClosed(id) => {
@@ -304,6 +326,56 @@ impl cosmic::Application for AppModel {
 }
 
 impl AppModel {
+    fn update_daemon(&mut self, message: Message) -> Task<cosmic::Action<Message>> {
+        match message {
+            Message::ToggleDaemon(running) => {
+                if self.daemon_pending
+                    || !matches!(
+                        self.daemon,
+                        Some(
+                            voxtype::Daemon::Active
+                                | voxtype::Daemon::Inactive
+                                | voxtype::Daemon::Failed
+                        )
+                    )
+                {
+                    return Task::none();
+                }
+                self.daemon_pending = true;
+                self.error = None;
+                self.stop_notice = false;
+                return cosmic::task::future(async move {
+                    cosmic::Action::App(Message::DaemonSet(
+                        running,
+                        voxtype::set_daemon(running).await,
+                    ))
+                });
+            }
+            Message::DaemonSet(running, result) => {
+                self.daemon_pending = false;
+                match result {
+                    Ok(()) => {
+                        if running {
+                            self.status_generation = self.status_generation.wrapping_add(1);
+                        } else {
+                            self.stop_notice = true;
+                        }
+                    }
+                    Err(e) => self.error = Some(e),
+                }
+                return Self::daemon_query();
+            }
+            _ => {}
+        }
+        Task::none()
+    }
+
+    fn daemon_query() -> Task<cosmic::Action<Message>> {
+        cosmic::task::future(async {
+            cosmic::Action::App(Message::Daemon(voxtype::daemon().await))
+        })
+    }
+
     /// Fixed popup header: state glyph, name, state text and daemon toggler.
     fn header(&self) -> Element<'_, Message> {
         let state = if self.binary_missing {
@@ -312,14 +384,26 @@ impl AppModel {
             self.state
         };
         let status = match (state, self.daemon) {
+            (_, Some(voxtype::Daemon::Failed)) => fl!("state-failed"),
+            (_, Some(voxtype::Daemon::Inactive | voxtype::Daemon::Missing))
+            | (voxtype::State::Stopped, _) => fl!("state-stopped"),
             (voxtype::State::Idle, _) => fl!("state-idle"),
             (voxtype::State::Recording, _) => fl!("state-recording"),
             (voxtype::State::Transcribing, _) => fl!("state-transcribing"),
-            (voxtype::State::Stopped, Some(voxtype::Daemon::Failed)) => fl!("state-failed"),
-            (voxtype::State::Stopped, _) => fl!("state-stopped"),
         };
-        // Read-only until the daemon toggler task wires start/stop.
         let running = self.daemon == Some(voxtype::Daemon::Active);
+        let toggle = widget::toggler(running).on_toggle_maybe(
+            (!self.daemon_pending
+                && matches!(
+                    self.daemon,
+                    Some(
+                        voxtype::Daemon::Active
+                            | voxtype::Daemon::Inactive
+                            | voxtype::Daemon::Failed
+                    )
+                ))
+            .then_some(Message::ToggleDaemon),
+        );
         widget::Row::new()
             .push(widget::icon::from_name(icon_name(state)).size(24))
             .push(
@@ -328,7 +412,7 @@ impl AppModel {
                     .push(widget::text::caption(status))
                     .width(cosmic::iced::Length::Fill),
             )
-            .push(widget::toggler(running))
+            .push(toggle)
             .align_y(cosmic::iced::Alignment::Center)
             .spacing(cosmic::theme::spacing().space_s)
             .into()

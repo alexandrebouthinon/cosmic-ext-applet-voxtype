@@ -146,7 +146,6 @@ pub async fn daemon() -> Result<Daemon, String> {
     Ok(parse_daemon(&show))
 }
 
-#[expect(dead_code, reason = "wired by the daemon toggler task")]
 pub async fn set_daemon(running: bool) -> Result<(), String> {
     let verb = if running { "start" } else { "stop" };
     run("systemctl", &["--user", verb, "voxtype"])
@@ -180,7 +179,12 @@ pub async fn devices() -> Result<Vec<Device>, String> {
 
 /// Streams Voxtype state changes, restarting the follower with backoff when it exits.
 pub fn subscription() -> Subscription<Event> {
-    Subscription::run(|| {
+    subscription_with_generation(0)
+}
+
+/// Restarts the follower when the applet changes generation after starting the service.
+pub fn subscription_with_generation(generation: u64) -> Subscription<Event> {
+    Subscription::run_with(generation, |_| {
         stream::channel(8, async |mut out: futures::channel::mpsc::Sender<Event>| {
             let mut backoff = Duration::from_secs(1);
             loop {

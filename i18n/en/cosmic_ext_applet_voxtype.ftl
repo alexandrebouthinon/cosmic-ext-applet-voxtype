@@ -23,3 +23,6 @@ position-bottom-center = Bottom center
 size-small = S
 size-medium = M
 size-large = L
+daemon-missing = Service not found: run `voxtype setup systemd`
+daemon-failed-hint = Check `journalctl --user -u voxtype`
+daemon-stopped-notice = GPU freed; Voxtype will start again at next login
