@@ -10,10 +10,6 @@
 
 A [COSMIC](https://system76.com/cosmic) panel applet for [Voxtype](https://voxtype.io), the push-to-talk dictation daemon. It tells you at a glance whether Voxtype is listening, and shows a glowing particle orb that breathes with your voice while you speak.
 
-<p align="center">
-  <img src="docs/assets/orb.gif" alt="The particle orb reacting to speech, then turning accent-coloured while transcribing" width="480">
-</p>
-
 ## Features
 
 - **Live status in the panel.** The icon follows Voxtype's state as soon as it changes:
