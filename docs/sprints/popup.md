@@ -14,6 +14,7 @@ Livrable testable : popup à onglets dans le panneau ; couper le toggler libère
 Maquette : https://claude.ai/artifact/Twxfwdprz56zxNrgHM3Rqp (disposition B).
 
 ## À capitaliser
+- Voxtype `audio.device` n'accepte que les noms ALSA de `voxtype info devices` ; un nom de source PipeWire (`alsa_input.…`) donne `Audio device not found` au démarrage de l'enregistrement, pas au démarrage du daemon (test réel)
 
 ## Bilan (fin de sprint)
 - Points prévus / livrés : …

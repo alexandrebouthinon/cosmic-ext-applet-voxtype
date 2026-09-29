@@ -28,9 +28,10 @@ Choisir depuis le panneau le micro que Voxtype utilisera pour les prochaines dic
 
 ## Choix fonctionnels
 - Seulement les entrées : pas de sorties ni de moniteurs dans la liste (tranché par l'utilisateur).
+- Filtrage : liste de `voxtype info devices --json` sans les sorties ALSA (`front:`, `surround*`, `hdmi`, `iec958`…) ; les noms de sources PipeWire sont refusés par Voxtype (`Audio device not found`, testé) (tranché par l'utilisateur).
 
 ## Hypothèses
-- `voxtype info devices --json` mélange entrées et sorties ALSA (`front:`, `surround…`). La méthode de filtrage (liste Voxtype filtrée ou sources PipeWire hors `.monitor` acceptées par `audio.device`) se tranche en début de tâche, avec un test réel (non bloquant).
+- Aucune.
 
 ## Tâches
 | Lot | Tâche | Points | Fichiers | Fichier de référence |
