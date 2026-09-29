@@ -11,6 +11,7 @@ L'utilisateur a un système en français : l'applet doit lui parler français, e
 
 ## Cas d'erreur et limites
 - Clé absente du fichier français : repli sur l'anglais pour cette clé (jamais d'identifiant brut) ; un test empêche d'en livrer.
+- Libellés courts pour tenir dans le popup : onglet « Micro » / « Mic », interrupteur de l'orbe « Activer » / « Enable » (libellé fixe).
 - Messages techniques renvoyés par Voxtype ou `pactl`/`wpctl` : affichés tels quels, non traduits.
 - Changement de langue système : pris en compte au prochain lancement de l'applet.
 
@@ -23,6 +24,7 @@ L'utilisateur a un système en français : l'applet doit lui parler français, e
 - [ ] `fr_CA` et `fr_FR` donnent le français, `de_DE` et `C` l'anglais (test de sélection).
 - [ ] Le `.desktop` généré contient `Name[fr]`, `Comment[fr]`, `Keywords[fr]`, et le metainfo son `summary` en fr.
 - [ ] Avec `LANG=fr_FR.UTF-8`, popup, erreurs et onglets en français au panneau.
+- [ ] Aucun libellé ne pousse un contrôle hors du popup, en français comme en anglais.
 
 ## Choix techniques
 - Détection : `DesktopLanguageRequester` + négociation d'i18n-embed, repli `en` (existant, tranché : toute locale fr_*).
