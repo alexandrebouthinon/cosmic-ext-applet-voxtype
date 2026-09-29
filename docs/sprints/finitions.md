@@ -22,5 +22,8 @@ Maquette : https://claude.ai/artifact/CYw8gJCW6DM68gC6fsGHab (variante B).
 | 2 | Libellé de l'interrupteur de l'orbe trop long, pousse le bouton hors écran : « Activer » / « Enable » | ajustement | feat/i18n-fr | 1 | validé |
 
 ## Bilan (fin de sprint)
-- Points prévus / livrés : …
-- Rétro : ce qui a raté → règle ajoutée (brief-type, AGENTS.md, skill)
+- Points prévus / livrés : 9 / 9 (+2 en recette)
+- Marché : maquette en 3 variantes, voile choisi du premier coup ; voile en disques emboîtés, lisse et sans couture.
+- Raté → règle :
+  - Libellés FR trop longs (onglet, interrupteur de l'orbe) et « Backend » traduit à tort → libellés courts, termes techniques non traduits (piège `archi`)
+- Capitalisé : `tech/cosmic/libcosmic-layer-surface-rendering` (voile radial dessiné sous iced), `tech/cosmic/cosmic-panel-applet-overlay` (traduction du `.desktop` par xdgen)

@@ -34,10 +34,11 @@ Un seul binaire, deux processus : l'applet (lancée par cosmic-panel) et l'overl
 
 ## Pièges
 - Jamais de layer surface dans l'applet : cosmic-panel les proxifie. L'overlay est un processus séparé, avec `X-HostWaylandDisplay=true` dans le `.desktop`.
-- libcosmic floute toute la surface par défaut : `core.set_auto_blur(Default::default())`, puis `blur()` avec des rectangles.
+- libcosmic floute toute la surface par défaut : garder `core.set_auto_blur(Default::default())`. Pas de flou compositeur (bandes visibles) : l'orbe dessine son propre voile radial (`view.rs`).
 - Tests panneau : `just install-user` puis `pkill -x cosmic-panel` (relancé par la session). `Exec=` absolu obligatoire.
 - `pkill -f` : ancrer le motif (`'^[^ ]*cosmic-ext-applet-voxtype --overlay$'`), sinon il tue son propre shell.
 - `just run` n'est pas le rendu du panneau ; l'overlay seul : `cargo run -- --overlay` (quitte si son parent meurt).
 - Voxtype : CLI uniquement, jamais modifié ni forké.
 - Listes système (micros, sorties…) : valider en cadrage sur les données réelles de la machine, face à ce qu'affiche COSMIC. Voxtype ne voit que les PCM ALSA ; les micros passent par PipeWire (`src/pipewire.rs`), Voxtype restant sur `default`.
 - `AppModel` : l'état de chaque onglet dans sa propre struct et un `update_<feature>` par feature, dès le brief. Sinon, chaque feature passe clippy seule mais plus une fois réunies (`struct_excessive_bools`, `too_many_lines`).
+- Traductions : libellés courts sur les onglets et à côté des contrôles (≈ 12 caractères max), sinon le contrôle sort du popup ; termes techniques (Backend…) non traduits.
