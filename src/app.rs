@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
-use crate::config::Config;
+use crate::config::{Config, OverlayPosition, OverlaySize};
 use crate::fl;
 use crate::voxtype;
 use cosmic::cosmic_config::{self, CosmicConfigEntry};
@@ -28,11 +28,24 @@ pub struct AppModel {
     overlay: Option<OverlayChild>,
     /// Popup tabs; each entry carries its `Tab` as data.
     tabs: segmented_button::SingleSelectModel,
+    /// Orb position dropdown labels; built once in `init` so they outlive the view.
+    position_labels: Vec<String>,
+    /// Orb size segmented control; each entry carries its `OverlaySize` as data.
+    orb_size: segmented_button::SingleSelectModel,
     /// `None` until the first `systemctl` query answers.
     daemon: Option<voxtype::Daemon>,
     /// Last command failure, shown under the popup header.
     error: Option<String>,
 }
+
+/// Orb positions in the order shown by the position dropdown.
+const POSITIONS: [OverlayPosition; 5] = [
+    OverlayPosition::TopLeft,
+    OverlayPosition::TopRight,
+    OverlayPosition::BottomLeft,
+    OverlayPosition::BottomRight,
+    OverlayPosition::BottomCenter,
+];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Tab {
@@ -49,6 +62,8 @@ pub enum Message {
     Voxtype(voxtype::Event),
     UpdateConfig(Config),
     ToggleOverlay(bool),
+    SetPosition(OverlayPosition),
+    SetSize(OverlaySize),
     SelectTab(segmented_button::Entity),
     Daemon(Result<voxtype::Daemon, String>),
 }
@@ -80,26 +95,61 @@ impl cosmic::Application for AppModel {
         core: cosmic::Core,
         _flags: Self::Flags,
     ) -> (Self, Task<cosmic::Action<Self::Message>>) {
+        let config = cosmic_config::Config::new(Self::APP_ID, Config::VERSION)
+            .map(|context| match Config::get_entry(&context) {
+                Ok(config) => config,
+                Err((_errors, config)) => {
+                    // for why in errors {
+                    //     tracing::error!(%why, "error loading app config");
+                    // }
+
+                    config
+                }
+            })
+            .unwrap_or_default();
+
         // Construct the app model with the runtime's core.
         let mut app = AppModel {
             core,
-            config: cosmic_config::Config::new(Self::APP_ID, Config::VERSION)
-                .map(|context| match Config::get_entry(&context) {
-                    Ok(config) => config,
-                    Err((_errors, config)) => {
-                        // for why in errors {
-                        //     tracing::error!(%why, "error loading app config");
-                        // }
-
-                        config
-                    }
-                })
-                .unwrap_or_default(),
             tabs: segmented_button::Model::builder()
                 .insert(|b| b.text(fl!("tab-status")).data(Tab::Status).activate())
                 .insert(|b| b.text(fl!("tab-micro")).data(Tab::Micro))
                 .insert(|b| b.text(fl!("tab-orb")).data(Tab::Orb))
                 .build(),
+            position_labels: vec![
+                fl!("position-top-left"),
+                fl!("position-top-right"),
+                fl!("position-bottom-left"),
+                fl!("position-bottom-right"),
+                fl!("position-bottom-center"),
+            ],
+            orb_size: segmented_button::Model::builder()
+                .insert(|b| {
+                    let b = b.text(fl!("size-small")).data(OverlaySize::Small);
+                    if config.size == OverlaySize::Small {
+                        b.activate()
+                    } else {
+                        b
+                    }
+                })
+                .insert(|b| {
+                    let b = b.text(fl!("size-medium")).data(OverlaySize::Medium);
+                    if config.size == OverlaySize::Medium {
+                        b.activate()
+                    } else {
+                        b
+                    }
+                })
+                .insert(|b| {
+                    let b = b.text(fl!("size-large")).data(OverlaySize::Large);
+                    if config.size == OverlaySize::Large {
+                        b.activate()
+                    } else {
+                        b
+                    }
+                })
+                .build(),
+            config,
             ..Default::default()
         };
         app.sync_overlay();
@@ -191,11 +241,23 @@ impl cosmic::Application for AppModel {
             Message::UpdateConfig(config) => {
                 self.config = config;
                 self.sync_overlay();
+                self.sync_orb_size();
             }
             Message::ToggleOverlay(enabled) => {
                 if let Ok(ctx) = cosmic_config::Config::new(Self::APP_ID, Config::VERSION) {
                     _ = self.config.set_show_overlay(&ctx, enabled);
                 }
+            }
+            Message::SetPosition(position) => {
+                if let Ok(ctx) = cosmic_config::Config::new(Self::APP_ID, Config::VERSION) {
+                    _ = self.config.set_position(&ctx, position);
+                }
+            }
+            Message::SetSize(size) => {
+                if let Ok(ctx) = cosmic_config::Config::new(Self::APP_ID, Config::VERSION) {
+                    _ = self.config.set_size(&ctx, size);
+                }
+                self.sync_orb_size();
             }
             Message::SelectTab(id) => self.tabs.activate(id),
             Message::Daemon(Ok(daemon)) => self.daemon = Some(daemon),
@@ -272,9 +334,26 @@ impl AppModel {
             .into()
     }
 
-    #[expect(clippy::unused_self, reason = "filled by the status tab task")]
     fn status_tab(&self) -> Element<'_, Message> {
-        widget::Column::new().into()
+        // The daemon reports no info while stopped; a missing field while running is also shown as unavailable.
+        let unavailable = self.binary_missing || self.state == voxtype::State::Stopped;
+        let value = |field: &Option<String>| {
+            if unavailable {
+                fl!("unavailable")
+            } else {
+                field.clone().unwrap_or_else(|| fl!("unavailable"))
+            }
+        };
+        widget::list_column()
+            .add(widget::settings::item(
+                fl!("info-model"),
+                widget::text::body(value(&self.info.model)),
+            ))
+            .add(widget::settings::item(
+                fl!("info-backend"),
+                widget::text::body(value(&self.info.backend)),
+            ))
+            .into()
     }
 
     #[expect(clippy::unused_self, reason = "filled by the microphone task")]
@@ -283,11 +362,47 @@ impl AppModel {
     }
 
     fn orb_tab(&self) -> Element<'_, Message> {
+        let position_selected = POSITIONS.iter().position(|p| *p == self.config.position);
+        // `on_activate` requires a `'static` closure, so the entity -> size mapping is
+        // collected up front instead of borrowing `self.orb_size` from inside it.
+        let size_by_entity: Vec<(segmented_button::Entity, OverlaySize)> = self
+            .orb_size
+            .iter()
+            .filter_map(|id| {
+                self.orb_size
+                    .data::<OverlaySize>(id)
+                    .map(|size| (id, *size))
+            })
+            .collect();
         widget::list_column()
             .add(widget::settings::item(
                 fl!("show-overlay"),
                 widget::toggler(self.config.show_overlay).on_toggle(Message::ToggleOverlay),
             ))
+            .add(widget::settings::item(
+                fl!("orb-position"),
+                widget::dropdown(self.position_labels.as_slice(), position_selected, |i| {
+                    Message::SetPosition(POSITIONS.get(i).copied().unwrap_or_default())
+                }),
+            ))
+            // Full width under its label: squeezed beside it, the active item's check mark
+            // hides the neighbouring labels.
+            .add(
+                widget::Column::new()
+                    .push(widget::text::body(fl!("orb-size")))
+                    .push(
+                        widget::segmented_control::horizontal(&self.orb_size)
+                            .on_activate(move |entity| {
+                                let size = size_by_entity
+                                    .iter()
+                                    .find(|(id, _)| *id == entity)
+                                    .map_or_else(OverlaySize::default, |(_, size)| *size);
+                                Message::SetSize(size)
+                            })
+                            .width(cosmic::iced::Length::Fill),
+                    )
+                    .spacing(cosmic::theme::spacing().space_xxs),
+            )
             .into()
     }
 
@@ -306,6 +421,18 @@ impl AppModel {
                 .and_then(|exe| std::process::Command::new(exe).arg("--overlay").spawn())
                 .ok()
                 .map(OverlayChild);
+        }
+    }
+
+    /// Keeps the size segmented control's selection in sync with the config,
+    /// including changes made externally (e.g. another applet instance).
+    fn sync_orb_size(&mut self) {
+        let entity = self
+            .orb_size
+            .iter()
+            .find(|&id| self.orb_size.data::<OverlaySize>(id) == Some(&self.config.size));
+        if let Some(id) = entity {
+            self.orb_size.activate(id);
         }
     }
 }
