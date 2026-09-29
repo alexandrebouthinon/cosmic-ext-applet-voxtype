@@ -27,7 +27,7 @@ L'utilisateur dicte avec l'orbe à l'écran. Le flou du compositeur, approché p
 
 ## Choix techniques
 - Rendu : voile dessiné dans le canvas de l'orbe (tranché : « halo dessiné seul », variante B).
-- Dégradé : iced n'a pas de dégradé radial ; anneaux concentriques fins (≈ 1 px) remplis en even-odd, opacité tirée d'une fonction de profil pure et testée.
+- Dégradé : iced n'a pas de dégradé radial ; disques emboîtés tous les 1 px, du bord vers le centre, chacun ajoutant l'opacité manquante (des anneaux disjoints laisseraient des coutures d'anticrénelage), profil tiré d'une fonction pure et testée.
 - Voile dessiné même quand le thème n'a pas « interface givrée » (il ne dépend plus du compositeur).
 
 ## Hypothèses

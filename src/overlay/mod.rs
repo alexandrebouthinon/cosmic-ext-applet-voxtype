@@ -12,13 +12,11 @@ use cosmic::cosmic_config::{self, CosmicConfigEntry};
 use cosmic::iced::platform_specific::runtime::wayland::layer_surface::{
     IcedMargin, IcedOutput, SctkLayerSurfaceSettings,
 };
-use cosmic::iced::platform_specific::shell::wayland::commands::blur::blur;
 use cosmic::iced::platform_specific::shell::wayland::commands::layer_surface::{
     Anchor, KeyboardInteractivity, Layer, destroy_layer_surface, get_layer_surface,
 };
 use cosmic::iced::widget::canvas;
 use cosmic::iced::{Color, Length, Subscription, window::Id};
-use cosmic::iced::{Point, Rectangle, Size};
 use cosmic::prelude::*;
 use particles::{Grain, Mode, Swarm};
 use std::time::{Duration, Instant};
@@ -28,10 +26,6 @@ const SEED: u64 = 0x5eed_0b1e;
 // Slow enough that syllables blend into one swell instead of jolts.
 const ATTACK_PER_S: f32 = 8.0;
 const RELEASE_PER_S: f32 = 2.0;
-/// Blurred disc radius, relative to the orb radius: just wraps the grains at rest.
-const BLUR_RATIO: f32 = 1.3;
-/// Horizontal strips approximating the blurred disc (the protocol takes rectangles).
-const BLUR_STRIPS: u16 = 24;
 const FADE_PER_S: f32 = 1.0 / 0.2;
 const CONFIG_ID: &str = <crate::app::AppModel as cosmic::Application>::APP_ID;
 
@@ -77,7 +71,7 @@ impl cosmic::Application for Overlay {
     }
 
     fn init(mut core: cosmic::Core, _flags: ()) -> (Self, Task<cosmic::Action<Message>>) {
-        // Auto blur covers the whole square surface; `show` blurs only a disc instead.
+        // Auto blur would frost the whole square surface; the orb draws its own veil instead.
         #[expect(
             clippy::default_trait_access,
             reason = "libcosmic does not re-export enumflags2"
@@ -114,6 +108,7 @@ impl cosmic::Application for Overlay {
             grains: &self.grains,
             mode: self.mode,
             fade: self.fade,
+            level: self.level.value(),
         })
         .width(Length::Fill)
         .height(Length::Fill)
@@ -190,7 +185,7 @@ impl Overlay {
         // The tick subscription restarts with the surface: avoid a huge first step.
         self.last_tick = Instant::now();
         let side = self.config.size.px();
-        let surface = get_layer_surface(SctkLayerSurfaceSettings {
+        get_layer_surface(SctkLayerSurfaceSettings {
             id,
             layer: Layer::Overlay,
             keyboard_interactivity: KeyboardInteractivity::None,
@@ -204,13 +199,7 @@ impl Overlay {
             size: Some((Some(side), Some(side))),
             exclusive_zone: -1,
             ..Default::default()
-        });
-        if !cosmic::theme::active().cosmic().frosted_system_interface {
-            return surface;
-        }
-        #[expect(clippy::cast_precision_loss, reason = "surface side is at most 300")]
-        let side = side as f32;
-        surface.chain(blur(id, Some(disc(side / 2.0, view::radius(side) * BLUR_RATIO))).discard())
+        })
     }
 
     fn animate(&mut self, now: Instant, dt: f32) -> Task<cosmic::Action<Message>> {
@@ -242,27 +231,6 @@ fn step_toward(value: f32, target: f32, max_step: f32) -> f32 {
     }
 }
 
-/// Rectangles covering a disc of `radius` centred at (`center`, `center`).
-fn disc(center: f32, radius: f32) -> Vec<Rectangle> {
-    let strip = 2.0 * radius / f32::from(BLUR_STRIPS);
-    (0..BLUR_STRIPS)
-        .map(|i| {
-            let top = f32::from(i).mul_add(strip, -radius);
-            // Half chord at the strip edge nearest the centre, so the strips cover the disc.
-            let nearest = if top < 0.0 {
-                (top + strip).min(0.0)
-            } else {
-                top
-            };
-            let half = (radius * radius - nearest * nearest).max(0.0).sqrt();
-            Rectangle::new(
-                Point::new(center - half, center + top),
-                Size::new(2.0 * half, strip),
-            )
-        })
-        .collect()
-}
-
 fn anchor(position: OverlayPosition) -> Anchor {
     match position {
         OverlayPosition::TopLeft => Anchor::TOP | Anchor::LEFT,
@@ -276,17 +244,7 @@ fn anchor(position: OverlayPosition) -> Anchor {
 
 #[cfg(test)]
 mod tests {
-    use super::{disc, step_toward};
-
-    #[test]
-    fn blur_disc_stays_within_its_bounding_square() {
-        let strips = disc(120.0, 50.0);
-        assert!(!strips.is_empty());
-        for strip in strips {
-            assert!(strip.x >= 70.0 - 1e-3 && strip.x + strip.width <= 170.0 + 1e-3);
-            assert!(strip.y >= 70.0 - 1e-3 && strip.y + strip.height <= 170.0 + 1e-3);
-        }
-    }
+    use super::step_toward;
 
     #[test]
     fn fade_steps_clamp_at_the_target() {
