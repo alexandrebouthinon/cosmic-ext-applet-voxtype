@@ -25,8 +25,8 @@ Maquette : https://claude.ai/artifact/Twxfwdprz56zxNrgHM3Rqp (disposition B).
 |---|---|---|---|---|---|
 | 1 | Onglet Statut : infos correctes | — | — | — | validé |
 | 2 | Toggle daemon : arrête bien Parakeet | — | — | — | validé |
-| 3 | Micro : liste ALSA brute et illisible ; lister les sources PipeWire (nom lisible, sans monitors) et choisir via `pactl set-default-source`, Voxtype sur `default` | ajustement | feat/micro | 3 | à faire |
-| 4 | Orbe : l'indicateur de sélection masque les libellés S/M/L | ajustement | feat/applet | 1 | à faire |
+| 3 | Micro : liste ALSA brute et illisible ; lister les sources PipeWire (nom lisible, sans monitors) et choisir via `pactl set-default-source`, Voxtype sur `default` | ajustement | feat/micro | 3 | corrigé |
+| 4 | Orbe : l'indicateur de sélection masque les libellés S/M/L | ajustement | feat/applet | 1 | corrigé |
 
 ## Bilan (fin de sprint)
 - Points prévus / livrés : …
