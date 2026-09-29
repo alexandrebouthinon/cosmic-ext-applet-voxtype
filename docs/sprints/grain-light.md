@@ -22,5 +22,11 @@ Mockup: https://claude.ai/artifact/8FULFPGBfLVdv4Wu3DN38s (variant "Blend +").
 ## To capitalise
 
 ## Outcome (end of sprint)
-- Planned / delivered points: 6 / …
-- Retro: …
+- Planned / delivered points: 6 / 6
+- Worked:
+  - precise formulas in the spec: code right on the first pass;
+  - Sonnet subagent delivered halos and cost test in one go (measured cost ×1.985);
+  - validated at the panel with no feedback; CPU judged fine by the user.
+- Failed → rule:
+  - mockup unreadable (Artifact not found, scratchpad wiped), formulas recovered from the transcript → save mockup HTML to `docs/mockups/` and link it from the spec (`cadrage` skill)
+- Capitalised: nothing
