@@ -2,6 +2,7 @@
 
 use crate::config::{Config, OverlayPosition, OverlaySize};
 use crate::fl;
+use crate::pipewire;
 use crate::voxtype;
 use cosmic::cosmic_config::{self, CosmicConfigEntry};
 use cosmic::iced::platform_specific::shell::wayland::commands::popup::{destroy_popup, get_popup};
@@ -40,6 +41,18 @@ pub struct AppModel {
     stop_notice: bool,
     daemon_pending: bool,
     status_generation: u64,
+    micro: Micro,
+}
+
+/// Microphone tab state.
+#[derive(Default)]
+struct Micro {
+    sources: pipewire::Sources,
+    /// `audio.device` in Voxtype's config: it must be `default` to follow the chosen source.
+    voxtype_device: Option<String>,
+    saving: bool,
+    /// Voxtype was switched to `default` while stopped: applies at the next start.
+    notice: bool,
 }
 
 /// Orb positions in the order shown by the position dropdown.
@@ -72,6 +85,15 @@ pub enum Message {
     Daemon(Result<voxtype::Daemon, String>),
     ToggleDaemon(bool),
     DaemonSet(bool, Result<(), String>),
+    MicroLoaded(Result<(pipewire::Sources, String), String>),
+    SelectMicro(String),
+    MicroSaved {
+        name: String,
+        /// The `PipeWire` default source was changed, even if Voxtype's config then failed.
+        switched: bool,
+        /// `Ok(true)`: Voxtype's config was rewritten while the daemon is stopped.
+        result: Result<bool, String>,
+    },
 }
 
 /// Create a COSMIC application from the app model
@@ -288,12 +310,16 @@ impl cosmic::Application for AppModel {
             message @ (Message::ToggleDaemon(_) | Message::DaemonSet(..)) => {
                 return self.update_daemon(message);
             }
+            message @ (Message::MicroLoaded(_)
+            | Message::SelectMicro(_)
+            | Message::MicroSaved { .. }) => return self.update_micro(message),
             Message::TogglePopup => {
                 return if let Some(p) = self.popup.take() {
                     destroy_popup(p)
                 } else {
                     self.error = None;
                     self.stop_notice = false;
+                    self.micro.notice = false;
                     let new_id = Id::unique();
                     self.popup.replace(new_id);
                     let mut popup_settings = self.core.applet.get_popup_settings(
@@ -308,7 +334,19 @@ impl cosmic::Application for AppModel {
                         .min_width(300.0)
                         .min_height(200.0)
                         .max_height(1080.0);
-                    Task::batch([get_popup(popup_settings), Self::daemon_query()])
+                    Task::batch([
+                        get_popup(popup_settings),
+                        Self::daemon_query(),
+                        cosmic::task::future(async {
+                            let result = async {
+                                let sources = pipewire::sources().await?;
+                                let device = voxtype::config_get("audio.device").await?;
+                                Ok((sources, device))
+                            }
+                            .await;
+                            cosmic::Action::App(Message::MicroLoaded(result))
+                        }),
+                    ])
                 };
             }
             Message::PopupClosed(id) => {
@@ -440,9 +478,99 @@ impl AppModel {
             .into()
     }
 
-    #[expect(clippy::unused_self, reason = "filled by the microphone task")]
+    fn update_micro(&mut self, message: Message) -> Task<cosmic::Action<Message>> {
+        match message {
+            Message::MicroLoaded(Ok((sources, device))) => {
+                self.micro.sources = sources;
+                self.micro.voxtype_device = Some(device);
+            }
+            Message::MicroLoaded(Err(e)) => self.error = Some(e),
+            Message::SelectMicro(name) => {
+                if self.state.is_active()
+                    || self.micro.saving
+                    || self.micro.sources.default.as_deref() == Some(name.as_str())
+                    || !self.micro.sources.list.iter().any(|s| s.name == name)
+                {
+                    return Task::none();
+                }
+                self.micro.saving = true;
+                self.micro.notice = false;
+                self.error = None;
+                let reroute = self.micro.voxtype_device.as_deref() != Some("default");
+                let running = self.daemon == Some(voxtype::Daemon::Active);
+                return cosmic::task::future(async move {
+                    let (switched, result) = match pipewire::set_default_source(&name).await {
+                        Err(e) => (false, Err(e)),
+                        Ok(()) if !reroute => (true, Ok(false)),
+                        Ok(()) => (true, Self::reroute_voxtype(running).await),
+                    };
+                    cosmic::Action::App(Message::MicroSaved {
+                        name,
+                        switched,
+                        result,
+                    })
+                });
+            }
+            Message::MicroSaved {
+                name,
+                switched,
+                result,
+            } => {
+                self.micro.saving = false;
+                if switched {
+                    self.micro.sources.default = Some(name);
+                }
+                match result {
+                    Ok(pending) => {
+                        self.micro.voxtype_device = Some("default".to_owned());
+                        self.micro.notice = pending;
+                    }
+                    Err(e) => self.error = Some(e),
+                }
+            }
+            _ => {}
+        }
+        Task::none()
+    }
+
+    /// Points Voxtype at `default` so it follows the `PipeWire` default source.
+    async fn reroute_voxtype(running: bool) -> Result<bool, String> {
+        voxtype::config_set("audio.device", "default").await?;
+        if running {
+            voxtype::restart_daemon().await?;
+        }
+        Ok(!running)
+    }
+
     fn micro_tab(&self) -> Element<'_, Message> {
-        widget::Column::new().into()
+        let mut sources = widget::list_column();
+        for source in &self.micro.sources.list {
+            let selected = self.micro.sources.default.as_deref() == Some(source.name.as_str());
+            let message = (!self.state.is_active() && !self.micro.saving && !selected)
+                .then(|| Message::SelectMicro(source.name.clone()));
+            sources = sources.add(
+                widget::list::button(widget::text(source.label.as_str()))
+                    .selected(selected)
+                    .on_press_maybe(message),
+            );
+        }
+        widget::Column::new()
+            .push_maybe(
+                self.micro
+                    .sources
+                    .list
+                    .is_empty()
+                    .then(|| widget::text::body(fl!("micro-none"))),
+            )
+            .push(sources)
+            .push(widget::text::caption(fl!("micro-system-wide")))
+            .push_maybe(
+                self.micro
+                    .notice
+                    .then(|| widget::text::caption(fl!("micro-next-start"))),
+            )
+            .spacing(cosmic::theme::spacing().space_xxs)
+            .into()
     }
 
     fn orb_tab(&self) -> Element<'_, Message> {

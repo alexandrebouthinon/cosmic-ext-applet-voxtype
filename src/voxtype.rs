@@ -108,15 +108,8 @@ pub fn parse_daemon(show: &str) -> Daemon {
     }
 }
 
-/// An audio device as listed by `voxtype info devices --json`.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
-pub struct Device {
-    pub name: String,
-    pub default: bool,
-}
-
 /// Runs a command and returns its stdout, or its stderr as the error to show the user.
-async fn run(program: &str, args: &[&str]) -> Result<String, String> {
+pub async fn run(program: &str, args: &[&str]) -> Result<String, String> {
     let out = Command::new(program)
         .args(args)
         .output()
@@ -153,28 +146,18 @@ pub async fn set_daemon(running: bool) -> Result<(), String> {
         .map(drop)
 }
 
-#[expect(dead_code, reason = "wired by the microphone task")]
 pub async fn restart_daemon() -> Result<(), String> {
     run("systemctl", &["--user", "restart", "voxtype"])
         .await
         .map(drop)
 }
 
-#[expect(dead_code, reason = "wired by the microphone task")]
 pub async fn config_get(key: &str) -> Result<String, String> {
     run(BIN, &["config", "get", key]).await
 }
 
-#[expect(dead_code, reason = "wired by the microphone task")]
 pub async fn config_set(key: &str, value: &str) -> Result<(), String> {
     run(BIN, &["config", "set", key, value]).await.map(drop)
-}
-
-/// All ALSA devices Voxtype sees, outputs included: callers filter them.
-#[expect(dead_code, reason = "wired by the microphone task")]
-pub async fn devices() -> Result<Vec<Device>, String> {
-    let json = run(BIN, &["info", "devices", "--json"]).await?;
-    serde_json::from_str(&json).map_err(|e| e.to_string())
 }
 
 /// Streams Voxtype state changes, restarting the follower with backoff when it exits.
@@ -281,15 +264,5 @@ mod tests {
         ] {
             assert_eq!(parse_daemon(show), want, "{show}");
         }
-    }
-
-    #[test]
-    fn parses_device_list() {
-        let json =
-            r#"[{"name": "default", "default": true}, {"name": "pipewire", "default": false}]"#;
-        let devices: Vec<Device> = serde_json::from_str(json).unwrap();
-        assert_eq!(devices.len(), 2);
-        assert!(devices[0].default);
-        assert_eq!(devices[1].name, "pipewire");
     }
 }

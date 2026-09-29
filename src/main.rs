@@ -5,6 +5,7 @@ mod config;
 mod i18n;
 mod install;
 mod overlay;
+mod pipewire;
 mod voxtype;
 
 fn main() -> cosmic::iced::Result {

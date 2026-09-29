@@ -26,3 +26,6 @@ size-large = L
 daemon-missing = Service not found: run `voxtype setup systemd`
 daemon-failed-hint = Check `journalctl --user -u voxtype`
 daemon-stopped-notice = GPU freed; Voxtype will start again at next login
+micro-next-start = The microphone will apply on the next start
+micro-system-wide = Sets the default microphone for all apps
+micro-none = No microphone found
