@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MPL-2.0
 
-//! Voxtype daemon state, read only through its CLI (`voxtype status --follow`).
+//! Voxtype daemon state and control, only through its CLI and `systemctl --user`.
 
 use cosmic::iced::{Subscription, futures, stream};
 use futures::SinkExt;
@@ -76,6 +76,106 @@ pub fn parse_status_line(line: &str) -> Option<(State, Info)> {
         backend: raw.backend,
     };
     Some((state, info))
+}
+
+/// Health of the `voxtype.service` user unit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Daemon {
+    Active,
+    /// Stopped on purpose (applet, terminal, or never started).
+    Inactive,
+    /// Crashed or failed to start: the user needs `journalctl`.
+    Failed,
+    /// No such unit: `voxtype setup systemd` was never run.
+    Missing,
+}
+
+/// Parses `systemctl --user show voxtype -p LoadState -p ActiveState`.
+#[must_use]
+pub fn parse_daemon(show: &str) -> Daemon {
+    let prop = |key: &str| {
+        show.lines()
+            .find_map(|l| l.strip_prefix(key)?.strip_prefix('='))
+            .unwrap_or_default()
+    };
+    if prop("LoadState") == "not-found" {
+        return Daemon::Missing;
+    }
+    match prop("ActiveState") {
+        "active" | "activating" | "reloading" => Daemon::Active,
+        "failed" => Daemon::Failed,
+        _ => Daemon::Inactive,
+    }
+}
+
+/// An audio device as listed by `voxtype info devices --json`.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct Device {
+    pub name: String,
+    pub default: bool,
+}
+
+/// Runs a command and returns its stdout, or its stderr as the error to show the user.
+async fn run(program: &str, args: &[&str]) -> Result<String, String> {
+    let out = Command::new(program)
+        .args(args)
+        .output()
+        .await
+        .map_err(|e| format!("{program}: {e}"))?;
+    if out.status.success() {
+        Ok(String::from_utf8_lossy(&out.stdout).trim().to_owned())
+    } else {
+        Err(String::from_utf8_lossy(&out.stderr).trim().to_owned())
+    }
+}
+
+pub async fn daemon() -> Result<Daemon, String> {
+    let show = run(
+        "systemctl",
+        &[
+            "--user",
+            "show",
+            "voxtype",
+            "-p",
+            "LoadState",
+            "-p",
+            "ActiveState",
+        ],
+    )
+    .await?;
+    Ok(parse_daemon(&show))
+}
+
+#[expect(dead_code, reason = "wired by the daemon toggler task")]
+pub async fn set_daemon(running: bool) -> Result<(), String> {
+    let verb = if running { "start" } else { "stop" };
+    run("systemctl", &["--user", verb, "voxtype"])
+        .await
+        .map(drop)
+}
+
+#[expect(dead_code, reason = "wired by the microphone task")]
+pub async fn restart_daemon() -> Result<(), String> {
+    run("systemctl", &["--user", "restart", "voxtype"])
+        .await
+        .map(drop)
+}
+
+#[expect(dead_code, reason = "wired by the microphone task")]
+pub async fn config_get(key: &str) -> Result<String, String> {
+    run(BIN, &["config", "get", key]).await
+}
+
+#[expect(dead_code, reason = "wired by the microphone task")]
+pub async fn config_set(key: &str, value: &str) -> Result<(), String> {
+    run(BIN, &["config", "set", key, value]).await.map(drop)
+}
+
+/// All ALSA devices Voxtype sees, outputs included: callers filter them.
+#[expect(dead_code, reason = "wired by the microphone task")]
+pub async fn devices() -> Result<Vec<Device>, String> {
+    let json = run(BIN, &["info", "devices", "--json"]).await?;
+    serde_json::from_str(&json).map_err(|e| e.to_string())
 }
 
 /// Streams Voxtype state changes, restarting the follower with backoff when it exits.
@@ -164,5 +264,28 @@ mod tests {
         assert!(State::Transcribing.is_active());
         assert!(!State::Idle.is_active());
         assert!(!State::Stopped.is_active());
+    }
+
+    #[test]
+    fn maps_unit_states() {
+        for (show, want) in [
+            ("LoadState=loaded\nActiveState=active", Daemon::Active),
+            ("LoadState=loaded\nActiveState=activating", Daemon::Active),
+            ("LoadState=loaded\nActiveState=inactive", Daemon::Inactive),
+            ("LoadState=loaded\nActiveState=failed", Daemon::Failed),
+            ("LoadState=not-found\nActiveState=inactive", Daemon::Missing),
+        ] {
+            assert_eq!(parse_daemon(show), want, "{show}");
+        }
+    }
+
+    #[test]
+    fn parses_device_list() {
+        let json =
+            r#"[{"name": "default", "default": true}, {"name": "pipewire", "default": false}]"#;
+        let devices: Vec<Device> = serde_json::from_str(json).unwrap();
+        assert_eq!(devices.len(), 2);
+        assert!(devices[0].default);
+        assert_eq!(devices[1].name, "pipewire");
     }
 }

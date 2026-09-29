@@ -7,7 +7,7 @@ use cosmic::cosmic_config::{self, CosmicConfigEntry};
 use cosmic::iced::platform_specific::shell::wayland::commands::popup::{destroy_popup, get_popup};
 use cosmic::iced::{Limits, Subscription, window::Id};
 use cosmic::prelude::*;
-use cosmic::widget;
+use cosmic::widget::{self, segmented_button};
 
 /// The application model stores app-specific state used to describe its interface and
 /// drive its logic.
@@ -26,6 +26,19 @@ pub struct AppModel {
     binary_missing: bool,
     /// The `--overlay` child process, running while the overlay is enabled.
     overlay: Option<OverlayChild>,
+    /// Popup tabs; each entry carries its `Tab` as data.
+    tabs: segmented_button::SingleSelectModel,
+    /// `None` until the first `systemctl` query answers.
+    daemon: Option<voxtype::Daemon>,
+    /// Last command failure, shown under the popup header.
+    error: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Tab {
+    Status,
+    Micro,
+    Orb,
 }
 
 /// Messages emitted by the application and its widgets.
@@ -36,6 +49,8 @@ pub enum Message {
     Voxtype(voxtype::Event),
     UpdateConfig(Config),
     ToggleOverlay(bool),
+    SelectTab(segmented_button::Entity),
+    Daemon(Result<voxtype::Daemon, String>),
 }
 
 /// Create a COSMIC application from the app model
@@ -80,6 +95,11 @@ impl cosmic::Application for AppModel {
                     }
                 })
                 .unwrap_or_default(),
+            tabs: segmented_button::Model::builder()
+                .insert(|b| b.text(fl!("tab-status")).data(Tab::Status).activate())
+                .insert(|b| b.text(fl!("tab-micro")).data(Tab::Micro))
+                .insert(|b| b.text(fl!("tab-orb")).data(Tab::Orb))
+                .build(),
             ..Default::default()
         };
         app.sync_overlay();
@@ -113,12 +133,21 @@ impl cosmic::Application for AppModel {
     /// multiple poups, you may match the id parameter to determine which popup to
     /// create a view for.
     fn view_window(&self, _id: Id) -> Element<'_, Self::Message> {
-        let content_list = widget::list_column().add(widget::settings::item(
-            fl!("show-overlay"),
-            widget::toggler(self.config.show_overlay).on_toggle(Message::ToggleOverlay),
-        ));
+        let spacing = cosmic::theme::spacing();
+        let tab = match self.tabs.active_data::<Tab>() {
+            Some(Tab::Micro) => self.micro_tab(),
+            Some(Tab::Orb) => self.orb_tab(),
+            _ => self.status_tab(),
+        };
+        let content = widget::Column::new()
+            .push(self.header())
+            .push_maybe(self.error.as_deref().map(widget::text::caption))
+            .push(widget::segmented_control::horizontal(&self.tabs).on_activate(Message::SelectTab))
+            .push(tab)
+            .spacing(spacing.space_s)
+            .padding(spacing.space_s);
 
-        self.core.applet.popup_container(content_list).into()
+        self.core.applet.popup_container(content).into()
     }
 
     /// Register subscriptions for this application.
@@ -168,10 +197,14 @@ impl cosmic::Application for AppModel {
                     _ = self.config.set_show_overlay(&ctx, enabled);
                 }
             }
+            Message::SelectTab(id) => self.tabs.activate(id),
+            Message::Daemon(Ok(daemon)) => self.daemon = Some(daemon),
+            Message::Daemon(Err(e)) => self.error = Some(e),
             Message::TogglePopup => {
                 return if let Some(p) = self.popup.take() {
                     destroy_popup(p)
                 } else {
+                    self.error = None;
                     let new_id = Id::unique();
                     self.popup.replace(new_id);
                     let mut popup_settings = self.core.applet.get_popup_settings(
@@ -186,7 +219,12 @@ impl cosmic::Application for AppModel {
                         .min_width(300.0)
                         .min_height(200.0)
                         .max_height(1080.0);
-                    get_popup(popup_settings)
+                    Task::batch([
+                        get_popup(popup_settings),
+                        cosmic::task::future(async {
+                            cosmic::Action::App(Message::Daemon(voxtype::daemon().await))
+                        }),
+                    ])
                 };
             }
             Message::PopupClosed(id) => {
@@ -204,6 +242,55 @@ impl cosmic::Application for AppModel {
 }
 
 impl AppModel {
+    /// Fixed popup header: state glyph, name, state text and daemon toggler.
+    fn header(&self) -> Element<'_, Message> {
+        let state = if self.binary_missing {
+            voxtype::State::Stopped
+        } else {
+            self.state
+        };
+        let status = match (state, self.daemon) {
+            (voxtype::State::Idle, _) => fl!("state-idle"),
+            (voxtype::State::Recording, _) => fl!("state-recording"),
+            (voxtype::State::Transcribing, _) => fl!("state-transcribing"),
+            (voxtype::State::Stopped, Some(voxtype::Daemon::Failed)) => fl!("state-failed"),
+            (voxtype::State::Stopped, _) => fl!("state-stopped"),
+        };
+        // Read-only until the daemon toggler task wires start/stop.
+        let running = self.daemon == Some(voxtype::Daemon::Active);
+        widget::Row::new()
+            .push(widget::icon::from_name(icon_name(state)).size(24))
+            .push(
+                widget::Column::new()
+                    .push(widget::text::heading("Voxtype"))
+                    .push(widget::text::caption(status))
+                    .width(cosmic::iced::Length::Fill),
+            )
+            .push(widget::toggler(running))
+            .align_y(cosmic::iced::Alignment::Center)
+            .spacing(cosmic::theme::spacing().space_s)
+            .into()
+    }
+
+    #[expect(clippy::unused_self, reason = "filled by the status tab task")]
+    fn status_tab(&self) -> Element<'_, Message> {
+        widget::Column::new().into()
+    }
+
+    #[expect(clippy::unused_self, reason = "filled by the microphone task")]
+    fn micro_tab(&self) -> Element<'_, Message> {
+        widget::Column::new().into()
+    }
+
+    fn orb_tab(&self) -> Element<'_, Message> {
+        widget::list_column()
+            .add(widget::settings::item(
+                fl!("show-overlay"),
+                widget::toggler(self.config.show_overlay).on_toggle(Message::ToggleOverlay),
+            ))
+            .into()
+    }
+
     /// Runs the overlay child exactly while it is enabled, respawning it if it died.
     fn sync_overlay(&mut self) {
         if !self.config.show_overlay {
