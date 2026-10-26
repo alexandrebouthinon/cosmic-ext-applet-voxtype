@@ -1,3 +1,19 @@
+# [1.0.0-develop.2](https://github.com/alexandrebouthinon/cosmic-ext-applet-voxtype/compare/v1.0.0-develop.1...v1.0.0-develop.2) (2026-10-26)
+
+
+### Bug Fixes
+
+* **metainfo:** point the icon URL at the shipped icon ([7503a90](https://github.com/alexandrebouthinon/cosmic-ext-applet-voxtype/commit/7503a90717fa055c3648d5f6d231fc632d0ff355))
+* **micro:** mark the active mic with a check mark ([64f26d9](https://github.com/alexandrebouthinon/cosmic-ext-applet-voxtype/commit/64f26d9ddf9d815c879a263cb4a89da998913965))
+
+
+### Features
+
+* **i18n:** add French translation ([2d7958a](https://github.com/alexandrebouthinon/cosmic-ext-applet-voxtype/commit/2d7958aa4e434845ffb829a1f486738349fa03bb))
+* **install:** ship an AppImage installable with --install ([9627a4e](https://github.com/alexandrebouthinon/cosmic-ext-applet-voxtype/commit/9627a4e7b1bb736d76c14148f3bc127165e0fbcb))
+* **overlay:** light the orb with a glowing core and front grain halos ([4f398b5](https://github.com/alexandrebouthinon/cosmic-ext-applet-voxtype/commit/4f398b56c44d643131f12baa5abb9600cf74d40a))
+* **overlay:** replace strip blur with a drawn radial veil that follows the voice ([83c0f77](https://github.com/alexandrebouthinon/cosmic-ext-applet-voxtype/commit/83c0f7722584fc3a8198f3f09013d0a40692b853))
+
 # 1.0.0-develop.1 (2026-09-29)
 
 
