@@ -87,21 +87,12 @@ vendor-extract:
     rm -rf vendor
     tar pxf vendor.tar
 
-# Publishes a release from `main` (stable, with binary) or `develop` (prerelease) via semantic-release
-release:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    branch="$(git rev-parse --abbrev-ref HEAD)"
-    if [[ "$branch" != "main" && "$branch" != "develop" ]]; then
-        echo "error: 'just release' only runs on 'main' or 'develop' (current: $branch)" >&2
-        exit 1
-    fi
-    if [[ -n "$(git status --porcelain)" ]]; then
-        echo "error: 'just release' requires a clean working tree" >&2
-        exit 1
-    fi
-    if [[ ! -d node_modules ]]; then
-        npm ci
-    fi
-    GITHUB_TOKEN="$(gh auth token)" npx semantic-release --no-ci
-
+# Packs the release binary into an AppImage; needs `appimagetool` on PATH
+appimage: build-release
+    rm -rf {{cargo-target-dir}}/AppDir
+    install -Dm0755 {{cargo-target-dir}}/release/{{name}} {{cargo-target-dir}}/AppDir/usr/bin/{{name}}
+    install -Dm0644 target/xdgen/app.desktop {{cargo-target-dir}}/AppDir/{{desktop}}
+    install -Dm0644 resources/icon.svg {{cargo-target-dir}}/AppDir/{{appid}}.svg
+    install -Dm0644 target/xdgen/app.metainfo.xml {{cargo-target-dir}}/AppDir/usr/share/metainfo/{{appdata}}
+    ln -s usr/bin/{{name}} {{cargo-target-dir}}/AppDir/AppRun
+    ARCH=x86_64 appimagetool --no-appstream {{cargo-target-dir}}/AppDir {{cargo-target-dir}}/{{name}}-x86_64.AppImage

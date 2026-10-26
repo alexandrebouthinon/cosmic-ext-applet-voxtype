@@ -95,7 +95,9 @@ fn install_in(home: &Path, executable: &Path) -> io::Result<()> {
 }
 
 pub fn install() -> io::Result<()> {
-    install_in(&home()?, &env::current_exe()?)
+    // Inside an AppImage, `current_exe()` is in a mount that vanishes on exit.
+    let source = env::var_os("APPIMAGE").map_or_else(env::current_exe, |path| Ok(path.into()))?;
+    install_in(&home()?, &source)
 }
 
 fn uninstall_from(home: &Path) -> io::Result<()> {
