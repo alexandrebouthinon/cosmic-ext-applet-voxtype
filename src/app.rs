@@ -546,10 +546,19 @@ impl AppModel {
         let mut sources = widget::list_column();
         for source in &self.micro.sources.list {
             let selected = self.micro.sources.default.as_deref() == Some(source.name.as_str());
-            let message = (!self.state.is_active() && !self.micro.saving && !selected)
+            // The active row stays pressable (a no-op in `update`) so it isn't drawn
+            // dimmed like a disabled one: the check mark alone tells it apart.
+            let message = (!self.state.is_active() && !self.micro.saving)
                 .then(|| Message::SelectMicro(source.name.clone()));
+            let row = widget::Row::new()
+                .push(widget::text(source.label.as_str()))
+                .push(widget::space::horizontal())
+                .push_maybe(
+                    selected.then(|| widget::icon::from_name("object-select-symbolic").size(16)),
+                )
+                .align_y(cosmic::iced::Alignment::Center);
             sources = sources.add(
-                widget::list::button(widget::text(source.label.as_str()))
+                widget::list::button(row)
                     .selected(selected)
                     .on_press_maybe(message),
             );

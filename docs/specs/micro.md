@@ -20,6 +20,7 @@ Choose from the panel which mic Voxtype will use for the next dictations.
 
 ## Acceptance criteria
 - [ ] The list shows readable names (e.g. Blue Microphones, Easy Effects Source), with no outputs or monitors.
+- [ ] The active mic is marked with a check mark at the right of its row and is not drawn dimmed.
 - [ ] Choosing a mic changes the default PipeWire source; the next dictation uses that mic.
 - [ ] Voxtype off `default`: it's set back and restarted; if the daemon is stopped, it isn't relaunched.
 - [ ] Impossible to change mic during a recording.
