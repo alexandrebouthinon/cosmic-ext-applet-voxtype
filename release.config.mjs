@@ -1,18 +1,12 @@
-// semantic-release configuration, run locally via `just release`.
+// semantic-release configuration, run by the release workflow on every push
+// to `main` or `develop`.
 //
 // Both `main` and `develop` tag, write GitHub release notes, update
 // CHANGELOG.md and bump Cargo.toml/Cargo.lock. Only `main` additionally
-// builds the release binary (after the version bump) and attaches it to
-// the GitHub release; `develop` publishes a prerelease with no binary.
-import { execSync } from "node:child_process";
-
+// builds the binary and the AppImage (after the version bump) and attaches
+// them to the GitHub release; `develop` publishes a prerelease with no assets.
 const BINARY_NAME = "cosmic-ext-applet-voxtype";
-const BINARY_ASSET_NAME = `${BINARY_NAME}-x86_64-linux`;
-
-// Read the branch locally rather than from a CI env var: `just release`
-// always runs on the developer's machine, never in CI.
-const branch = execSync("git rev-parse --abbrev-ref HEAD").toString().trim();
-const isMain = branch === "main";
+const isMain = process.env.GITHUB_REF_NAME === "main";
 
 export default {
   branches: [
@@ -48,7 +42,7 @@ export default {
             "@semantic-release/exec",
             {
               prepareCmd:
-                "env -u GITHUB_TOKEN -u GH_TOKEN cargo build --release",
+                "env -u GITHUB_TOKEN -u GH_TOKEN just appimage",
             },
           ],
         ]
@@ -67,8 +61,9 @@ export default {
           ? [
               {
                 path: `target/release/${BINARY_NAME}`,
-                label: BINARY_ASSET_NAME,
+                name: `${BINARY_NAME}-x86_64-linux`,
               },
+              { path: `target/${BINARY_NAME}-x86_64.AppImage` },
             ]
           : [],
       },

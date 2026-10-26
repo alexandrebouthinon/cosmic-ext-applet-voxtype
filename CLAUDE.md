@@ -8,7 +8,8 @@ COSMIC panel applet (Rust, libcosmic) showing Voxtype's recording state. Scaffol
 - Window run (quick check, not the real panel rendering): `just run`
 - Panel test: `just install-user`, then add the applet in COSMIC Settings → Panel
 - Voxtype state source: `voxtype status --follow --format json`; control: `voxtype record …`
-- Release: `just release`
+- Release: automatic in CI (`.github/workflows/release.yml`) on every push to `main` or `develop`
+- AppImage (needs `appimagetool` on PATH): `just appimage`
 
 ## Architecture
 - `src/app.rs`: applet model, view, update, subscriptions
@@ -18,7 +19,7 @@ COSMIC panel applet (Rust, libcosmic) showing Voxtype's recording state. Scaffol
 
 ## Conventions
 - Branches: `main` + `develop` + `feat/*`. Work lands on `develop`; `develop` is FF-merged to `main` for stable releases.
-- `just release` publishes from `develop` (prerelease) or `main` (stable, with binary). Versions and tags come from semantic-release: never use `just tag`.
+- Pushing to `develop` publishes a prerelease, pushing to `main` a stable release with the binary and the AppImage. Versions and tags come from semantic-release: never use `just tag`.
 
 ## References
 - Official applets: https://github.com/pop-os/cosmic-applets

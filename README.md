@@ -36,6 +36,19 @@ A [COSMIC](https://system76.com/cosmic) panel applet for [Voxtype](https://voxty
 
 No root needed: everything goes into `~/.local`.
 
+### From a release
+
+Download either the binary (`cosmic-ext-applet-voxtype-x86_64-linux`) or the AppImage (`cosmic-ext-applet-voxtype-x86_64.AppImage`) from the [latest release](https://github.com/alexandrebouthinon/cosmic-ext-applet-voxtype/releases/latest), then register it as an applet:
+
+```sh
+chmod +x cosmic-ext-applet-voxtype-x86_64.AppImage
+./cosmic-ext-applet-voxtype-x86_64.AppImage --install
+```
+
+`--install` copies the file to `~/.local/bin` and writes the applet's desktop entry and icon: launched alone, neither file shows up in the panel settings. `--uninstall` removes all three. On a system without FUSE, add `--appimage-extract-and-run` before `--install`.
+
+### From source
+
 ```sh
 git clone https://github.com/alexandrebouthinon/cosmic-ext-applet-voxtype.git
 cd cosmic-ext-applet-voxtype

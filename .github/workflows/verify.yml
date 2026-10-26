@@ -2,7 +2,10 @@ name: Verify
 
 on:
   push:
+    # Release branches run this through the release workflow instead.
+    branches-ignore: [main, develop]
   pull_request:
+  workflow_call:
 
 permissions:
   contents: read

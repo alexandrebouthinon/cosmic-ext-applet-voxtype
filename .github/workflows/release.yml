@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+# Two pushes in a row must not race to tag the same version.
+concurrency:
+  group: release-${{ github.ref }}
+
+jobs:
+  verify:
+    uses: ./.github/workflows/verify.yml
+
+  release:
+    needs: verify
+    # Oldest supported COSMIC base (Pop!_OS 24.04): the binary must not need a
+    # newer glibc than this.
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # semantic-release reads every tag and commit since the last release.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libxkbcommon-dev libwayland-dev
+
+      - name: Install appimagetool
+        # The runner has no FUSE: run the AppImage extracted.
+        run: |
+          curl -fsSLo "$RUNNER_TEMP/appimagetool" \
+            https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+          chmod +x "$RUNNER_TEMP/appimagetool"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+          echo APPIMAGE_EXTRACT_AND_RUN=1 >> "$GITHUB_ENV"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
