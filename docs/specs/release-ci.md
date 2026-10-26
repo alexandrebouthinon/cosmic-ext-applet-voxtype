@@ -16,7 +16,7 @@ Publish v1 and later versions from GitHub Actions, so the attached binary runs o
 
 ## Edge cases and limits
 - Build or AppImage packaging fails: the workflow fails before any commit, tag or GitHub release is created.
-- The `chore(release)` commit carries `[skip ci]` and is pushed with `GITHUB_TOKEN`: it triggers no new run.
+- The `chore(release)` commit is pushed with `GITHUB_TOKEN`, so it triggers no new run; it carries no `[skip ci]`, which would skip the stable run when `main` is fast-forwarded onto it.
 - AppImage on a host with no FUSE: the AppImage runtime prints its own error; the README documents `--appimage-extract-and-run`. The AppImage uses the static type-2 runtime (no `libfuse2` needed, `fusermount3` is enough).
 - The overlay child is spawned from `current_exe()`: inside the AppImage it is the mounted binary, valid while the applet runs.
 - Private repository: release runs consume the account's Actions minutes.

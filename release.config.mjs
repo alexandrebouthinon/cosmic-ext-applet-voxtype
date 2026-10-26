@@ -51,7 +51,9 @@ export default {
       "@semantic-release/git",
       {
         assets: ["CHANGELOG.md", "Cargo.toml", "Cargo.lock"],
-        message: "chore(release): ${nextRelease.version} [skip ci]",
+        // No `[skip ci]`: GITHUB_TOKEN pushes never trigger workflows anyway, and
+        // the marker would skip the stable run when `main` is fast-forwarded onto it.
+        message: "chore(release): ${nextRelease.version}",
       },
     ],
     [
