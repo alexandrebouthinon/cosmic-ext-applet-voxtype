@@ -24,6 +24,8 @@ A [COSMIC](https://system76.com/cosmic) panel applet for [Voxtype](https://voxty
 - **Reactive voice orb.** While you record, about 600 particles orbit on screen. Their radius, speed and shimmer follow your microphone level. When Voxtype transcribes, the orb contracts, spins faster and turns to your accent colour. When it is done, the orb fades out.
 - **Never in the way.** The orb is click-through: clicks and focus go to the window underneath. It takes no CPU when you are not dictating.
 - **Follows your theme.** Colours come from the active COSMIC theme and update live when you switch it.
+- **Popup.** A header switch stops the Voxtype daemon to free the GPU (for a game, say) and starts it again. *Status* shows Voxtype's state, model and backend. *Mic* lists your microphones, virtual ones included, marks the active one and switches it in one click. *Orb* turns the orb on or off and sets its position and size.
+- **English and French.** The applet follows your system language.
 - **Self-healing.** If the Voxtype daemon stops, the icon shows it. When the daemon comes back, the applet reconnects on its own.
 
 ## Requirements
@@ -84,23 +86,15 @@ flowchart LR
 
 ## Configuration
 
-Click the applet icon to open its popup and turn the voice orb on or off. Turning it off only hides the orb: dictation keeps working.
+Click the applet icon to open its popup. The *Orb* tab turns the voice orb on or off and sets its position and size. Turning it off only hides the orb: dictation keeps working. The *Mic* tab changes the system default microphone, which Voxtype follows: other apps follow it too.
 
-The settings live in `~/.config/cosmic/io.github.alexandrebouthinon.CosmicExtAppletVoxtype/v1/`, one file per key. They apply at once, with no restart:
+The orb settings live in `~/.config/cosmic/io.github.alexandrebouthinon.CosmicExtAppletVoxtype/v1/`, one file per key. They apply at once, with no restart:
 
 | Key | Values | Default |
 |---|---|---|
 | `show_overlay` | `true`, `false` | `true` |
 | `position` | `TopLeft`, `TopRight`, `BottomLeft`, `BottomRight`, `BottomCenter` | `BottomRight` |
 | `size` | `Small` (180 px), `Medium` (240 px), `Large` (300 px) | `Medium` |
-
-For example, to move the orb to the bottom centre of the screen:
-
-```sh
-echo BottomCenter > ~/.config/cosmic/io.github.alexandrebouthinon.CosmicExtAppletVoxtype/v1/position
-```
-
-Position and size will move into the popup in a later release.
 
 ## Troubleshooting
 
@@ -114,8 +108,6 @@ Position and size will move into the popup in a later release.
 
 ## Roadmap
 
-- Popup with Voxtype details (model, device, backend) and orb position and size settings
-- Microphone picker in the popup
 - Multi-monitor support
 - Start and stop recording from the applet
 - Reduced-motion mode
@@ -128,7 +120,7 @@ just verify   # fmt, clippy --fix, clippy -D warnings, tests
 cargo run -- --overlay   # the orb alone; it exits when its parent does
 ```
 
-Specs and sprint notes live in [`docs/`](docs). Translations use [Fluent](https://projectfluent.org). To add a language, copy [`i18n/en`](i18n/en) to your [ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) code and translate the messages.
+Specs live in [`docs/specs`](docs/specs). Translations use [Fluent](https://projectfluent.org). To add a language, copy [`i18n/en`](i18n/en) to your [ISO 639-1](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) code and translate the messages.
 
 ## License
 
