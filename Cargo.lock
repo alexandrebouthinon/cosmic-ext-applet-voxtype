@@ -922,7 +922,7 @@ dependencies = [
 
 [[package]]
 name = "cosmic-ext-applet-voxtype"
-version = "1.0.0-develop.2"
+version = "1.0.0"
 dependencies = [
  "i18n-embed",
  "i18n-embed-fl",
