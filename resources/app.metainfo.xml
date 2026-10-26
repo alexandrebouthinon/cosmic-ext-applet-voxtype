@@ -6,7 +6,7 @@
   <name>Cosmic Ext Applet Voxtype</name>
   <summary>Voxtype recording indicator for the COSMIC panel</summary>
   <icon type="remote" width="64" height="64" scale="1">
-    https://github.com/alexandrebouthinon/cosmic-ext-applet-voxtype/raw/main/resources/icons/hicolor/scalable/apps/icon.svg
+    https://github.com/alexandrebouthinon/cosmic-ext-applet-voxtype/raw/main/resources/icon.svg
   </icon>
   <url type="vcs-browser">https://github.com/alexandrebouthinon/cosmic-ext-applet-voxtype</url>
   <launchable type="desktop-id">io.github.alexandrebouthinon.CosmicExtAppletVoxtype.desktop</launchable>
